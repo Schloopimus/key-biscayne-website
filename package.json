@@ -1,0 +1,24 @@
+{
+  "name": "key-biscayne-website",
+  "type": "module",
+  "scripts": {
+    "dev": "rsbuild dev",
+    "build": "rsbuild build",
+    "check": "tsc --noEmit"
+  },
+  "private": true,
+  "devDependencies": {
+    "@rsbuild/core": "^2.1.7",
+    "@rsbuild/plugin-react": "^2.1.0",
+    "@types/bun": "latest",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "^1.170.18",
+    "@tanstack/react-start": "^1.168.32",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  }
+}
