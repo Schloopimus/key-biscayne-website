@@ -4,7 +4,6 @@ import {
   PortalEmptyState,
   PortalError,
   PortalPageHeading,
-  StatusPill,
   formatMarketDate,
   formatMoney,
   useLocalVendorId,
@@ -70,10 +69,11 @@ function StallSelectionPage() {
         await changeLocalBooking({
           data: { vendorId, bookingId: changingBooking.id, eventStallId: selectedStall.eventStallId },
         })
+        window.location.href = '/farmers-market/vendor/bookings'
       } else {
-        await createLocalBooking({ data: { vendorId, eventStallId: selectedStall.eventStallId } })
+        const booking = await createLocalBooking({ data: { vendorId, eventStallId: selectedStall.eventStallId } })
+        window.location.href = `/farmers-market/vendor/checkout?booking=${booking.bookingId}`
       }
-      window.location.href = '/farmers-market/vendor/bookings'
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'The local reservation could not be saved.')
       setStatus('idle')
@@ -92,11 +92,10 @@ function StallSelectionPage() {
   }
 
   return (
-    <>
+    <section className="stall-map-screen">
       <PortalPageHeading
-        eyebrow={changingBooking ? 'Change reservation' : 'Book a stall'}
-        title={changingBooking ? `Move stall ${changingBooking.stallCode}` : 'Choose a Saturday stall'}
-        body="Single-date reservations are enabled for this local demo. Month, quarter, year, payment, and the final plaza model remain disconnected."
+        eyebrow={changingBooking ? 'Change your spot' : 'Pick your spot'}
+        title={changingBooking ? `Move stall ${changingBooking.stallCode}` : 'Plaza Map'}
       />
       {error ? <PortalError message={error} /> : null}
 
@@ -107,53 +106,54 @@ function StallSelectionPage() {
           action={<a className="button portal-button--secondary" href="/farmers-market/admin/market-dates">Open admin demo →</a>}
         />
       ) : (
-        <div className="stall-booking-layout">
-          <aside className="portal-card stall-booking-controls">
-            <label>
-              <span>Market date</span>
-              <select
-                value={selectedEventId}
-                onChange={(event) => {
-                  setSelectedEventId(event.currentTarget.value)
-                  setSelectedStallId('')
-                }}
-                disabled={Boolean(changingBooking)}
-              >
+        <>
+          <div className="map-toolbar">
+            <div className="map-toolbar__dates">
+              <p className="portal-label">Choose a market date</p>
+              <div className="choice-pills">
                 {events.map((event) => (
-                  <option key={event.id} value={event.id}>{formatMarketDate(event.marketDate)}</option>
+                  <button
+                    key={event.id}
+                    type="button"
+                    className={selectedEventId === event.id ? 'is-active' : ''}
+                    disabled={Boolean(changingBooking)}
+                    onClick={() => {
+                      setSelectedEventId(event.id)
+                      setSelectedStallId('')
+                    }}
+                  >
+                    {formatMarketDate(event.marketDate, false)}
+                  </button>
                 ))}
-              </select>
-            </label>
-            {selectedEvent ? (
-              <dl className="portal-details portal-details--single">
-                <div><dt>Hours</dt><dd>{selectedEvent.startTime}–{selectedEvent.endTime}</dd></div>
-                <div><dt>Booking length</dt><dd>Single date</dd></div>
-              </dl>
-            ) : null}
-            <div className="diagram-placeholder" role="img" aria-label="Placeholder for the future three-dimensional plaza diagram">
-              <span>3D plaza diagram</span>
-              <strong>Placeholder</strong>
-              <p>Use the accessible stall list to make this local reservation.</p>
-            </div>
-            {changingBooking ? <a className="arrow-link" href="/farmers-market/vendor/bookings"><span>Cancel change</span><span>→</span></a> : null}
-          </aside>
-
-          <section className="portal-card stall-inventory" aria-labelledby="stall-list-title">
-            <div className="portal-card__heading">
-              <div>
-                <p className="eyebrow">Accessible stall list</p>
-                <h2 id="stall-list-title">Available inventory</h2>
               </div>
-              <span>{selectedEvent?.stalls.filter((stall) => !stall.bookingId).length ?? 0} open</span>
             </div>
-            <div className="stall-list">
+            <div className="map-toolbar__booking">
+              <div className="stall-legend" aria-label="Stall legend">
+                <span><i className="is-standard" />Standard</span>
+                <span><i className="is-corner" />Corner</span>
+                <span><i className="is-premium" />Premium</span>
+                <span><i className="is-booked" />Booked</span>
+              </div>
+              <p className="portal-label">Booking length</p>
+              <div className="choice-pills choice-pills--length">
+                <button type="button" className="is-active">Single Date</button>
+                <button type="button" disabled>Month</button>
+                <button type="button" disabled>Quarter</button>
+                <button type="button" disabled>Year</button>
+              </div>
+            </div>
+          </div>
+
+          <div className="plaza-layout">
+            <div className="plaza-map" aria-label="Accessible two-dimensional plaza stall map">
+              <span className="plaza-map__parking">Parking Area</span>
               {selectedEvent?.stalls.map((stall) => {
                 const isCurrent = changingBooking?.eventStallId === stall.eventStallId
-                const isBooked = Boolean(stall.bookingId)
+                const isBooked = Boolean(stall.bookingId) && !isCurrent
                 return (
                   <button
                     key={stall.eventStallId}
-                    className="stall-option"
+                    className={`plaza-stall plaza-stall--${stall.tier}${isBooked ? ' is-booked' : ''}`}
                     type="button"
                     disabled={isBooked}
                     aria-pressed={selectedStallId === stall.eventStallId}
@@ -161,32 +161,36 @@ function StallSelectionPage() {
                     onClick={() => setSelectedStallId(stall.eventStallId)}
                   >
                     <strong>{stall.stallCode}</strong>
-                    <span>{stall.tier}</span>
-                    <span>{formatMoney(stall.priceCents)}</span>
-                    {isCurrent ? <StatusPill status="current" /> : isBooked ? <StatusPill status="booked" /> : null}
+                    <span>{isBooked ? 'Booked' : formatMoney(stall.priceCents)}</span>
                   </button>
                 )
               })}
             </div>
 
-            {selectedStall ? (
-              <div className="selected-stall" role="status">
-                <div>
-                  <p className="eyebrow">Stall {selectedStall.stallCode}</p>
-                  <h3>{selectedStall.tier} stall</h3>
-                  <p>{selectedStall.description}</p>
-                </div>
-                <strong>{formatMoney(selectedStall.priceCents)} <small>/ Saturday</small></strong>
-                <button className="button button--market-dark" type="button" onClick={reserve} disabled={status === 'saving'}>
-                  {status === 'saving' ? 'Saving reservation…' : changingBooking ? 'Change to this stall →' : 'Reserve locally →'}
-                </button>
-              </div>
-            ) : (
-              <p className="portal-callout">Choose any available stall to review its details.</p>
-            )}
-          </section>
-        </div>
+            <aside className="stall-detail-panel">
+              {selectedStall ? (
+                <>
+                  <div>
+                    <p className="portal-label">Stall {selectedStall.stallCode}</p>
+                    <h2>{selectedStall.tier} stall</h2>
+                    <p>{selectedStall.description}</p>
+                  </div>
+                  <dl>
+                    <div><dt>Market date</dt><dd>{selectedEvent ? formatMarketDate(selectedEvent.marketDate) : '—'}</dd></div>
+                    <div><dt>Stall price</dt><dd>{formatMoney(selectedStall.priceCents)}</dd></div>
+                  </dl>
+                  <button className="button button--market-dark" type="button" onClick={reserve} disabled={status === 'saving'}>
+                    {status === 'saving' ? 'Reserving…' : changingBooking ? 'Change stall →' : 'Reserve stall →'}
+                  </button>
+                </>
+              ) : (
+                <p className="stall-detail-panel__prompt">Tap an open stall on the map to see details and reserve it.</p>
+              )}
+              <a className="portal-back-link" href="/farmers-market/vendor">← Back to dashboard</a>
+            </aside>
+          </div>
+        </>
       )}
-    </>
+    </section>
   )
 }

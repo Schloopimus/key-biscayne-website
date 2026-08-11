@@ -56,10 +56,10 @@ function FarmersMarketPage() {
                 welcoming atmosphere that feels like classic Key Biscayne.
               </p>
               <div className="button-row">
-                <a className="button button--market" href="/farmers-market/vendor/application">
+                <a className="button button--market" href="/farmers-market/vendor/sign-up">
                   Apply as a vendor <span aria-hidden="true">→</span>
                 </a>
-                <a className="button button--ghost" href="/farmers-market/vendor">
+                <a className="button button--ghost" href="/farmers-market/vendor/login">
                   Vendor portal
                 </a>
               </div>
@@ -83,7 +83,7 @@ function FarmersMarketPage() {
               </li>
             ))}
           </ol>
-          <a className="button button--market-dark" href="/farmers-market/vendor/application">
+          <a className="button button--market-dark" href="/farmers-market/vendor/sign-up">
             Start vendor application <span aria-hidden="true">→</span>
           </a>
         </section>

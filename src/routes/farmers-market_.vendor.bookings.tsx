@@ -57,7 +57,7 @@ function VendorBookingsPage() {
       <PortalPageHeading
         eyebrow="Stall dashboard"
         title="Your bookings"
-        body="Manage local single-date reservations. Payment, refunds, and email notices are deliberately not connected."
+        body="Review single-date reservations, change an active stall, or cancel before market day."
       />
       {error ? <PortalError message={error} /> : null}
       {!snapshot.vendor || snapshot.bookings.length === 0 ? (
@@ -84,11 +84,19 @@ function VendorBookingsPage() {
                 <div><dt>Local price</dt><dd>{formatMoney(booking.priceCents)}</dd></div>
               </dl>
               <p className="portal-callout">
-                {booking.status === 'reserved'
-                  ? 'Reserved locally. There is no payment state or checkout for this demo.'
-                  : `Cancelled ${new Date(booking.updatedAt).toLocaleString()}. No refund was required.`}
+                {booking.status === 'cancelled'
+                  ? `Cancelled ${new Date(booking.updatedAt).toLocaleString()}.`
+                  : booking.paymentStatus === 'complete'
+                    ? 'Booking confirmed. Demo payment is marked complete.'
+                    : 'Stall reserved. Complete the local payment handoff to confirm it.'}
               </p>
               {booking.status === 'reserved' ? (
+                <>
+                {booking.paymentStatus === 'pending' ? (
+                  <a className="button button--market-dark" href={`/farmers-market/vendor/checkout?booking=${booking.id}`}>
+                    Continue to payment
+                  </a>
+                ) : null}
                 <div className="button-row">
                   <a className="button portal-button--secondary" href={`/farmers-market/vendor/stalls?change=${booking.id}`}>
                     Change stall
@@ -102,6 +110,7 @@ function VendorBookingsPage() {
                     {busyBookingId === booking.id ? 'Cancelling…' : 'Cancel booking'}
                   </button>
                 </div>
+                </>
               ) : null}
             </article>
           ))}

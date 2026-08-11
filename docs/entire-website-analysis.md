@@ -25,9 +25,9 @@ At the time of this planning analysis, the repository was greenfield. The five p
 Implementation status as of 2026-08-11:
 
 - The five public routes are complete.
-- A local-only Farmers Market operations demo now persists public form submissions, vendor applications, certificate files, market dates, stalls, audit records, and bookings.
-- Vendor and admin routes are intentionally unauthenticated demo surfaces. Email, payments, R2, Turnstile, and deployment remain unconnected.
-- The final three-dimensional stall diagram remains a labeled placeholder because its Figma behavior and source asset are unresolved.
+- A local-only Farmers Market operations demo now follows the supplied vendor/admin Figma and persists public form submissions, local vendor profiles, vendor applications, certificate files, market dates, stalls, audit records, bookings, and simulated payment status.
+- Vendor and admin routes remain intentionally unauthenticated demo surfaces. Entered passwords are not stored or checked; email, real payments, R2, Turnstile, and deployment remain unconnected.
+- The unresolved three-dimensional Figma map was intentionally replaced by a responsive, keyboard-accessible two-dimensional stall layout; no fake 3D asset or behavior was invented.
 
 ---
 

@@ -122,6 +122,9 @@ export const bookings = sqliteTable(
       .notNull()
       .references(() => eventStalls.id, { onDelete: 'restrict' }),
     status: text('status', { enum: ['reserved', 'cancelled'] }).notNull().default('reserved'),
+    paymentStatus: text('payment_status', { enum: ['pending', 'complete'] })
+      .notNull()
+      .default('pending'),
     priceCents: integer('price_cents').notNull(),
     reservedAt: timestamp('reserved_at'),
     updatedAt: timestamp('updated_at'),

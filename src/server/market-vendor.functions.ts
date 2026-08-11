@@ -9,6 +9,7 @@ import type { Booking, EventStall, Vendor, VendorApplication } from './db/schema
 export type VendorBookingSummary = {
   id: string
   status: Booking['status']
+  paymentStatus: Booking['paymentStatus']
   priceCents: number
   reservedAt: string
   updatedAt: string
@@ -70,6 +71,48 @@ function validateEntityId(value: string, prefix: string, label: string) {
   if (!value.startsWith(prefix) || value.length > 120) throw new Error(`Invalid ${label}.`)
   return value
 }
+export const createLocalVendorAccount = createServerFn({ method: 'POST' })
+  .validator((formData: FormData) => {
+    const fullName = requiredFormField(formData, 'fullName', 'Full name')
+    const email = requiredFormField(formData, 'email', 'Email address', 320).toLowerCase()
+    const password = requiredFormField(formData, 'password', 'Password', 200)
+    if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Enter a valid email address.')
+    if (password.length < 8) throw new Error('Use at least 8 characters for the demo password.')
+    return { fullName, email }
+  })
+  .handler(async ({ data }) => {
+    const database = getDatabase()
+    const existing = database.select().from(schema.vendors).where(eq(schema.vendors.email, data.email)).get()
+    if (existing) throw new Error('A local vendor profile already uses this email. Log in instead.')
+
+    const vendorId = `vendor-${crypto.randomUUID()}`
+    const now = new Date().toISOString()
+    database
+      .insert(schema.vendors)
+      .values({
+        id: vendorId,
+        email: data.email,
+        contactName: data.fullName,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run()
+    return { vendorId }
+  })
+
+export const loginLocalVendorAccount = createServerFn({ method: 'POST' })
+  .validator((formData: FormData) => {
+    const email = requiredFormField(formData, 'email', 'Email address', 320).toLowerCase()
+    requiredFormField(formData, 'password', 'Password', 200)
+    if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Enter a valid email address.')
+    return { email }
+  })
+  .handler(async ({ data }) => {
+    const vendor = getDatabase().select().from(schema.vendors).where(eq(schema.vendors.email, data.email)).get()
+    if (!vendor) throw new Error('No local vendor profile uses this email. Create an account first.')
+    return { vendorId: vendor.id }
+  })
+
 
 export const submitVendorApplication = createServerFn({ method: 'POST' })
   .validator((formData: FormData) => {
@@ -228,6 +271,7 @@ export const getVendorSnapshot = createServerFn({ method: 'GET' })
       .select({
         id: schema.bookings.id,
         status: schema.bookings.status,
+        paymentStatus: schema.bookings.paymentStatus,
         priceCents: schema.bookings.priceCents,
         reservedAt: schema.bookings.reservedAt,
         updatedAt: schema.bookings.updatedAt,
@@ -383,6 +427,7 @@ export const createLocalBooking = createServerFn({ method: 'POST' })
             vendorId: data.vendorId,
             eventStallId: data.eventStallId,
             status: 'reserved',
+            paymentStatus: 'pending',
             priceCents: target.priceCents,
             reservedAt: now,
             updatedAt: now,
@@ -411,6 +456,91 @@ export const createLocalBooking = createServerFn({ method: 'POST' })
 
     return { bookingId }
   })
+export type LocalCheckout = {
+  bookingId: string
+  paymentStatus: Booking['paymentStatus']
+  priceCents: number
+  stallCode: string
+  tier: EventStall['tier']
+  marketDate: string
+}
+
+export const getLocalCheckout = createServerFn({ method: 'GET' })
+  .validator((data: { vendorId: string; bookingId: string }) => ({
+    vendorId: validateEntityId(data.vendorId, 'vendor-', 'vendor'),
+    bookingId: validateEntityId(data.bookingId, 'booking-', 'booking'),
+  }))
+  .handler(async ({ data }): Promise<LocalCheckout> => {
+    const checkout = getDatabase()
+      .select({
+        bookingId: schema.bookings.id,
+        paymentStatus: schema.bookings.paymentStatus,
+        priceCents: schema.bookings.priceCents,
+        stallCode: schema.stalls.code,
+        tier: schema.eventStalls.tier,
+        marketDate: schema.marketEvents.marketDate,
+      })
+      .from(schema.bookings)
+      .innerJoin(schema.eventStalls, eq(schema.bookings.eventStallId, schema.eventStalls.id))
+      .innerJoin(schema.stalls, eq(schema.eventStalls.stallId, schema.stalls.id))
+      .innerJoin(schema.marketEvents, eq(schema.eventStalls.eventId, schema.marketEvents.id))
+      .where(
+        and(
+          eq(schema.bookings.id, data.bookingId),
+          eq(schema.bookings.vendorId, data.vendorId),
+          eq(schema.bookings.status, 'reserved'),
+        ),
+      )
+      .get()
+    if (!checkout) throw new Error('Active booking not found.')
+    return checkout
+  })
+
+export const completeLocalPayment = createServerFn({ method: 'POST' })
+  .validator((data: { vendorId: string; bookingId: string }) => ({
+    vendorId: validateEntityId(data.vendorId, 'vendor-', 'vendor'),
+    bookingId: validateEntityId(data.bookingId, 'booking-', 'booking'),
+  }))
+  .handler(async ({ data }) => {
+    const database = getDatabase()
+    const booking = database
+      .select()
+      .from(schema.bookings)
+      .where(
+        and(
+          eq(schema.bookings.id, data.bookingId),
+          eq(schema.bookings.vendorId, data.vendorId),
+          eq(schema.bookings.status, 'reserved'),
+        ),
+      )
+      .get()
+    if (!booking) throw new Error('Active booking not found.')
+    if (booking.paymentStatus === 'complete') return { bookingId: booking.id }
+
+    const now = new Date().toISOString()
+    database.transaction((transaction) => {
+      transaction
+        .update(schema.bookings)
+        .set({ paymentStatus: 'complete', updatedAt: now })
+        .where(eq(schema.bookings.id, booking.id))
+        .run()
+      transaction
+        .insert(schema.auditLogs)
+        .values({
+          id: `audit-${crypto.randomUUID()}`,
+          actorKind: 'local-vendor',
+          actorId: data.vendorId,
+          action: 'booking.payment-demo-completed',
+          entityType: 'booking',
+          entityId: booking.id,
+          summary: 'Marked the booking payment complete in the local UI demo. No payment provider was called.',
+          createdAt: now,
+        })
+        .run()
+    })
+    return { bookingId: booking.id }
+  })
+
 
 export const changeLocalBooking = createServerFn({ method: 'POST' })
   .validator((data: { vendorId: string; bookingId: string; eventStallId: string }) => ({

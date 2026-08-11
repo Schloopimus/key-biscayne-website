@@ -27,4 +27,4 @@ bun run build
 - [Coding-agent contract](AGENTS.md)
 - [Claude instructions](CLAUDE.md)
 
-Public forms persist to the local SQLite demo inbox. The Farmers Market demo includes vendor applications, certificate uploads, admin review, market-date and stall inventory, and local booking/change/cancellation flows. Authentication, email, payments, R2 storage, spam protection, and deployment remain intentionally unconnected; `.data/` stays local and is gitignored.
+Public forms persist to the local SQLite demo inbox. The Farmers Market demo now follows the supplied vendor/admin Figma screens and includes local signup/login profiles, vendor applications, certificate uploads, admin review, market-date and stall inventory, accessible stall selection, booking changes/cancellation, and an explicitly simulated payment handoff. Passwords are never stored or checked; email, real authentication, payment processing, R2 storage, spam protection, and deployment remain intentionally unconnected. `.data/` stays local and is gitignored.

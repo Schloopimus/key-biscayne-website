@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { PortalEmptyState, PortalPageHeading, StatusPill } from '../components/MarketPortal'
-import { getAdminDashboard } from '../server/market-admin.functions'
+import { useState } from 'react'
+import { AdminSummaryTabs, PortalEmptyState, PortalError, PortalPageHeading, StatusPill } from '../components/MarketPortal'
+import { getAdminDashboard, reviewVendorApplication } from '../server/market-admin.functions'
 
 export const Route = createFileRoute('/farmers-market_/admin/')({
   head: () => ({ meta: [{ title: 'Market Admin | Key Biscayne Farmers Market' }] }),
@@ -10,80 +11,59 @@ export const Route = createFileRoute('/farmers-market_/admin/')({
 
 function AdminDashboard() {
   const dashboard = Route.useLoaderData()
-  const metrics = [
-    { label: 'Vendor applications', value: dashboard.counts.pendingApplications, note: 'pending review' },
-    { label: 'All vendors', value: dashboard.counts.approvedVendors, note: 'approved applications' },
-    { label: 'Stall bookings', value: dashboard.counts.activeBookings, note: 'active reservations' },
-    { label: 'Market dates', value: dashboard.counts.openDates, note: 'open for booking' },
-  ]
+  const [busyId, setBusyId] = useState('')
+  const [error, setError] = useState('')
+
+  async function decide(applicationId: string, decision: 'approved' | 'rejected') {
+    const reason = decision === 'rejected' ? window.prompt('Rejection reason for the vendor:')?.trim() : undefined
+    if (decision === 'rejected' && !reason) return
+    setBusyId(applicationId)
+    setError('')
+    try {
+      await reviewVendorApplication({ data: { applicationId, decision, reason } })
+      window.location.reload()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'The application decision could not be saved.')
+      setBusyId('')
+    }
+  }
 
   return (
-    <>
+    <section className="admin-dashboard-screen">
       <PortalPageHeading
         eyebrow="Market admin"
         title="Dashboard"
-        body="Review applications, manage Saturday inventory, and inspect local reservations."
+        action={<a className="portal-back-link" href="/farmers-market">← Log out</a>}
       />
-      <section className="portal-metrics" aria-label="Market overview">
-        {metrics.map((metric) => (
-          <article key={metric.label}>
-            <p>{metric.label}</p>
-            <strong>{metric.value}</strong>
-            <span>{metric.note}</span>
-          </article>
-        ))}
-      </section>
+      {error ? <PortalError message={error} /> : null}
+      <AdminSummaryTabs counts={dashboard.counts} active="applications" />
 
-      <div className="portal-dashboard-grid">
-        <section className="portal-card">
-          <div className="portal-card__heading">
-            <div>
-              <p className="eyebrow">Vendor applications</p>
-              <h2>Pending review</h2>
-            </div>
-            <a className="arrow-link" href="/farmers-market/admin/applications"><span>View all</span><span>→</span></a>
-          </div>
-          {dashboard.pendingApplications.length === 0 ? (
-            <PortalEmptyState title="Queue is clear" body="New local vendor applications will appear here." />
-          ) : (
-            <div className="portal-list">
-              {dashboard.pendingApplications.map((application) => (
-                <a key={application.id} className="portal-list-row" href={`/farmers-market/admin/applications/${application.id}`}>
-                  <div>
-                    <strong>{application.businessName}</strong>
-                    <span>{application.productCategory} · {application.contactName}</span>
-                  </div>
+      {dashboard.pendingApplications.length === 0 ? (
+        <PortalEmptyState title="Queue is clear" body="New local vendor applications will appear here." />
+      ) : (
+        <section className="admin-review-list" aria-label="Pending vendor applications">
+          {dashboard.pendingApplications.map((application) => (
+            <article key={application.id} className="admin-review-row">
+              <div>
+                <div className="admin-review-row__title">
+                  <h2>{application.businessName}</h2>
                   <StatusPill status="pending" />
-                </a>
-              ))}
-            </div>
-          )}
+                </div>
+                <p>{application.productCategory} · {application.contactName} · {application.email}</p>
+                <a href={`/farmers-market/admin/applications/${application.id}`}>view application</a>
+              </div>
+              <div className="button-row">
+                <button className="button button--market-dark" type="button" onClick={() => decide(application.id, 'approved')} disabled={busyId === application.id}>
+                  Approve
+                </button>
+                <button className="button portal-button--danger" type="button" onClick={() => decide(application.id, 'rejected')} disabled={busyId === application.id}>
+                  Reject
+                </button>
+              </div>
+            </article>
+          ))}
         </section>
-
-        <section className="portal-card">
-          <div className="portal-card__heading">
-            <div>
-              <p className="eyebrow">Audit trail</p>
-              <h2>Recent activity</h2>
-            </div>
-          </div>
-          {dashboard.recentActivity.length === 0 ? (
-            <p>No local activity has been recorded.</p>
-          ) : (
-            <ol className="activity-list">
-              {dashboard.recentActivity.map((activity) => (
-                <li key={activity.id}>
-                  <span aria-hidden="true" />
-                  <div>
-                    <strong>{activity.summary}</strong>
-                    <small>{new Date(activity.createdAt).toLocaleString()}</small>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-      </div>
-    </>
+      )}
+    </section>
   )
 }

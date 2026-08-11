@@ -1,0 +1,1 @@
+ALTER TABLE `booking` ADD `payment_status` text DEFAULT 'pending' NOT NULL;

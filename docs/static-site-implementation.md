@@ -24,10 +24,11 @@ The repository also contains a deliberately local-only Farmers Market operations
 - Persistent contact, volunteer, and school-interest submissions with an admin inbox
 - Vendor application and immutable revision status
 - Local health-certificate upload and download
-- Admin application review, vendor directory, market dates, stall inventory, and booking records
-- Accessible single-date stall reservation, change, and cancellation
+- Admin application review, vendor directory, market dates, stall inventory, booking records, and payment status
+- Responsive two-dimensional stall selection, reservation, payment-state handoff, change, and cancellation
+- Vendor and admin layouts matching the supplied Farmers Market Figma at desktop, adapted for keyboard and mobile use
 
-It deliberately does **not** include Better Auth, real accounts, outbound email, Stripe payments, private R2 storage, Turnstile, or deployment configuration. Every portal page labels those boundaries; no action pretends an external service is connected.
+It deliberately does **not** include Better Auth, production accounts, outbound email, Stripe payments, private R2 storage, Turnstile, or deployment configuration. Local signup/login stores only the vendor profile and never stores or checks the entered password. Every portal page labels those boundaries; no action pretends an external service is connected.
 
 The three public forms validate required browser fields and persist submissions to the local SQLite inbox. They reset after a successful write and state that email delivery is not connected.
 
@@ -408,15 +409,17 @@ Observed browser checks:
 
 No automated tests were written, by request.
 
-The local Farmers Market demo was additionally exercised on 2026-08-11:
+The Figma-derived Farmers Market UI and local workflow were additionally exercised on 2026-08-11:
 
+- Signup created a local vendor profile without storing its password; login reopened the seeded profile by email.
 - A vendor application and PDF certificate persisted locally.
-- The certificate endpoint returned the stored 133-byte PDF with attachment headers.
-- Admin review changed the application from pending to approved.
-- The approved vendor reserved A1, changed to A2, and cancelled the booking.
-- Market booking status closed and reopened; an A1 price update survived reload and was restored.
-- A public contact submission appeared in the admin inbox and was archived.
-- Keyboard focus was visible, Space selected a stall, and portal routes had no horizontal overflow at 1440 × 1000 and 390 × 844.
+- Admin review moved one application from pending to approved and another from pending to rejected with a visible reason.
+- The approved vendor reserved A1, completed the explicit local payment handoff, and reached the payment-complete dashboard state.
+- The per-date admin booking table showed the confirmed payment status and persisted vendor phone data.
+- A new premium market slot with an $80 price was created through the Figma-derived form.
+- Vendor signup, dashboard, application, map, payment, admin dashboard, vendor table, date management, booking table, and new-slot screens were reviewed at 1440 × 1024.
+- The same route set had no horizontal overflow at 390 × 844; the stall map retained its scrollable controls and accessible two-dimensional selection.
+- Keyboard focus displayed a 3px visible outline with a 4px offset.
 - `bun run check` and `bun run build` passed.
 
 ## 13. Safe editing workflow

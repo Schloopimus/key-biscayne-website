@@ -25,6 +25,7 @@ export const getAdminDashboard = createServerFn({ method: 'GET' }).handler(async
       businessName: schema.vendorApplications.businessName,
       productCategory: schema.vendorApplications.productCategory,
       contactName: schema.vendorApplications.contactName,
+      email: schema.vendorApplications.email,
       submittedAt: schema.vendorApplications.submittedAt,
       revision: schema.vendorApplications.revision,
     })
@@ -188,6 +189,8 @@ export const listAdminVendors = createServerFn({ method: 'GET' }).handler(async 
         productCategory: schema.vendorApplications.productCategory,
         status: schema.vendorApplications.status,
         revision: schema.vendorApplications.revision,
+        phone: schema.vendorApplications.phone,
+        certificateFileName: schema.vendorApplications.certificateFileName,
       })
       .from(schema.vendorApplications)
       .where(eq(schema.vendorApplications.vendorId, vendor.id))
@@ -229,19 +232,36 @@ export const getMarketAdministration = createServerFn({ method: 'GET' }).handler
 })
 
 export const createMarketEvent = createServerFn({ method: 'POST' })
-  .validator((data: { marketDate: string; label: string; startTime: string; endTime: string }) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(data.marketDate)) throw new Error('Choose a valid market date.')
-    if (!/^\d{2}:\d{2}$/.test(data.startTime) || !/^\d{2}:\d{2}$/.test(data.endTime)) {
-      throw new Error('Choose valid opening and closing times.')
-    }
-    if (data.startTime >= data.endTime) throw new Error('Closing time must be after opening time.')
-    return {
-      marketDate: data.marketDate,
-      label: checkedText(data.label, 'Market label'),
-      startTime: data.startTime,
-      endTime: data.endTime,
-    }
-  })
+  .validator(
+    (data: {
+      marketDate: string
+      label: string
+      startTime: string
+      endTime: string
+      tier?: 'standard' | 'corner' | 'premium'
+      priceCents?: number
+    }) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data.marketDate)) throw new Error('Choose a valid market date.')
+      if (!/^\d{2}:\d{2}$/.test(data.startTime) || !/^\d{2}:\d{2}$/.test(data.endTime)) {
+        throw new Error('Choose valid opening and closing times.')
+      }
+      if (data.startTime >= data.endTime) throw new Error('Closing time must be after opening time.')
+      const tier = data.tier ?? 'standard'
+      if (!['standard', 'corner', 'premium'].includes(tier)) throw new Error('Choose a valid pricing tier.')
+      const priceCents = data.priceCents ?? 7500
+      if (!Number.isInteger(priceCents) || priceCents < 0 || priceCents > 100_000) {
+        throw new Error('Enter a valid stall price.')
+      }
+      return {
+        marketDate: data.marketDate,
+        label: checkedText(data.label, 'Market label'),
+        startTime: data.startTime,
+        endTime: data.endTime,
+        tier,
+        priceCents,
+      }
+    },
+  )
   .handler(async ({ data }) => {
     
     const database = getDatabase()
@@ -264,7 +284,15 @@ export const createMarketEvent = createServerFn({ method: 'POST' })
     database.transaction((transaction) => {
       transaction
         .insert(schema.marketEvents)
-        .values({ id: eventId, ...data, status: 'open', createdAt: now })
+        .values({
+          id: eventId,
+          marketDate: data.marketDate,
+          label: data.label,
+          startTime: data.startTime,
+          endTime: data.endTime,
+          status: 'open',
+          createdAt: now,
+        })
         .run()
       transaction
         .insert(schema.eventStalls)
@@ -273,8 +301,8 @@ export const createMarketEvent = createServerFn({ method: 'POST' })
             id: `${eventId}-${stall.id}`,
             eventId,
             stallId: stall.id,
-            tier: 'standard' as const,
-            priceCents: 7500,
+            tier: data.tier,
+            priceCents: data.priceCents,
             active: true,
           })),
         )
@@ -369,7 +397,9 @@ export const listAdminBookings = createServerFn({ method: 'GET' }).handler(async
       vendorId: schema.bookings.vendorId,
       contactName: schema.vendors.contactName,
       email: schema.vendors.email,
+      eventId: schema.marketEvents.id,
       status: schema.bookings.status,
+      paymentStatus: schema.bookings.paymentStatus,
       priceCents: schema.bookings.priceCents,
       reservedAt: schema.bookings.reservedAt,
       updatedAt: schema.bookings.updatedAt,
@@ -388,12 +418,19 @@ export const listAdminBookings = createServerFn({ method: 'GET' }).handler(async
 
   return rows.map((booking) => {
     const application = database
-      .select({ businessName: schema.vendorApplications.businessName })
+      .select({
+        businessName: schema.vendorApplications.businessName,
+        phone: schema.vendorApplications.phone,
+      })
       .from(schema.vendorApplications)
       .where(eq(schema.vendorApplications.vendorId, booking.vendorId))
       .orderBy(desc(schema.vendorApplications.revision))
       .limit(1)
       .get()
-    return { ...booking, businessName: application?.businessName ?? booking.contactName }
+    return {
+      ...booking,
+      businessName: application?.businessName ?? booking.contactName,
+      phone: application?.phone ?? '—',
+    }
   })
 })

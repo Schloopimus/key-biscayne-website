@@ -1,51 +1,83 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
-import { PortalEmptyState, PortalPageHeading, StatusPill, formatMarketDate, formatMoney } from '../components/MarketPortal'
-import { listAdminBookings } from '../server/market-admin.functions'
+import { useEffect, useMemo, useState } from 'react'
+import { AdminSummaryTabs, PortalEmptyState, PortalPageHeading, StatusPill, formatMarketDate } from '../components/MarketPortal'
+import { getAdminDashboard, listAdminBookings } from '../server/market-admin.functions'
 
 export const Route = createFileRoute('/farmers-market_/admin/bookings')({
   head: () => ({ meta: [{ title: 'Stall Bookings | Market Admin' }] }),
-  loader: () => listAdminBookings(),
+  loader: async () => {
+    const [bookings, dashboard] = await Promise.all([listAdminBookings(), getAdminDashboard()])
+    return { bookings, dashboard }
+  },
   component: AdminBookingsPage,
 })
 
 function AdminBookingsPage() {
-  const bookings = Route.useLoaderData()
-  const [filter, setFilter] = useState<'all' | 'reserved' | 'cancelled'>('all')
-  const visibleBookings = bookings.filter((booking) => filter === 'all' || booking.status === filter)
+  const { bookings, dashboard } = Route.useLoaderData()
+  const [query, setQuery] = useState('')
+  const [eventId, setEventId] = useState('')
+
+  useEffect(() => {
+    setEventId(new URLSearchParams(window.location.search).get('event') ?? '')
+  }, [])
+
+  const visibleBookings = useMemo(() => {
+    const normalized = query.trim().toLowerCase()
+    return bookings.filter((booking) => {
+      if (booking.status !== 'reserved') return false
+      if (eventId && booking.eventId !== eventId) return false
+      if (!normalized) return true
+      return [booking.businessName, booking.contactName, booking.email, booking.phone, booking.stallCode]
+        .some((value) => value.toLowerCase().includes(normalized))
+    })
+  }, [bookings, eventId, query])
+  const selectedDate = eventId ? bookings.find((booking) => booking.eventId === eventId)?.marketDate : null
 
   return (
-    <>
+    <section className="admin-bookings-screen">
       <PortalPageHeading
         eyebrow="Market admin"
-        title="Stall bookings"
-        body="Local reservation records and server-owned price snapshots. No payment state exists in this demo."
+        title="Dashboard"
+        action={<a className="portal-back-link" href="/farmers-market">← Log out</a>}
       />
-      <div className="portal-toolbar">
-        <label><span>Booking status</span><select value={filter} onChange={(event) => setFilter(event.currentTarget.value as typeof filter)}><option value="all">All bookings</option><option value="reserved">Reserved</option><option value="cancelled">Cancelled</option></select></label>
-        <span>{visibleBookings.length} shown</span>
+      <AdminSummaryTabs counts={dashboard.counts} active="bookings" />
+      <div className="admin-table-toolbar">
+        <div>
+          {eventId ? <a className="portal-back-link" href="/farmers-market/admin/market-dates">← Back</a> : null}
+          <h2>{selectedDate ? formatMarketDate(selectedDate) : 'All active bookings'}</h2>
+        </div>
+        <label className="admin-search">
+          <span className="sr-only">Search bookings</span>
+          <input value={query} onChange={(event) => setQuery(event.currentTarget.value)} placeholder="Search by business, contact …" />
+        </label>
       </div>
       {visibleBookings.length === 0 ? (
-        <PortalEmptyState title="No matching bookings" body="Approved vendors can create a local reservation from the stall list." />
+        <PortalEmptyState title="No matching bookings" body="Confirmed vendor reservations will appear here." />
       ) : (
         <section className="portal-table-card" aria-label="Stall bookings">
           <div className="portal-table portal-table--bookings" role="table">
             <div className="portal-table__header" role="row">
-              <span role="columnheader">Vendor</span><span role="columnheader">Market date</span><span role="columnheader">Stall</span><span role="columnheader">Price</span><span role="columnheader">Status</span><span role="columnheader">Updated</span>
+              <span role="columnheader">Stall</span>
+              <span role="columnheader">Tier</span>
+              <span role="columnheader">Vendor</span>
+              <span role="columnheader">Phone</span>
+              <span role="columnheader">Payment status</span>
             </div>
             {visibleBookings.map((booking) => (
               <div className="portal-table__row" role="row" key={booking.id}>
-                <span role="cell" data-label="Vendor"><strong>{booking.businessName}</strong><small>{booking.email}</small></span>
-                <span role="cell" data-label="Market date">{formatMarketDate(booking.marketDate)}<small>{booking.marketLabel}</small></span>
-                <span role="cell" data-label="Stall">{booking.stallCode}<small>{booking.tier}</small></span>
-                <span role="cell" data-label="Price">{formatMoney(booking.priceCents)}</span>
-                <span role="cell" data-label="Status"><StatusPill status={booking.status} /></span>
-                <span role="cell" data-label="Updated">{new Date(booking.updatedAt).toLocaleString()}</span>
+                <span role="cell" data-label="Stall"><strong>{booking.stallCode}</strong></span>
+                <span role="cell" data-label="Tier">{booking.tier}</span>
+                <span role="cell" data-label="Vendor">{booking.businessName}</span>
+                <span role="cell" data-label="Phone">{booking.phone}</span>
+                <span role="cell" data-label="Payment status">
+                  <StatusPill status={booking.paymentStatus === 'complete' ? 'confirmed' : 'pending-payment'} />
+                </span>
               </div>
             ))}
           </div>
         </section>
       )}
-    </>
+      <p className="admin-pagination">Page 1/1</p>
+    </section>
   )
 }
