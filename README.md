@@ -2,7 +2,7 @@
 
 Public website for Key Biscayne Community Church, Community School, Mission programs, and Farmers Market.
 
-The five static routes are implemented with Bun, TanStack Start, React, TypeScript, Rsbuild, and a custom CSS design system.
+The five public routes and a local-only Farmers Market operations demo are implemented with Bun, TanStack Start, React, TypeScript, Rsbuild, Drizzle, SQLite, and a custom CSS design system.
 
 ## Run locally
 
@@ -27,4 +27,4 @@ bun run build
 - [Coding-agent contract](AGENTS.md)
 - [Claude instructions](CLAUDE.md)
 
-The current forms are local preview interactions only. Authentication, email, database, payments, uploads, deployment, and the Farmers Market dashboard are intentionally not implemented.
+Public forms persist to the local SQLite demo inbox. The Farmers Market demo includes vendor applications, certificate uploads, admin review, market-date and stall inventory, and local booking/change/cancellation flows. Authentication, email, payments, R2 storage, spam protection, and deployment remain intentionally unconnected; `.data/` stays local and is gitignored.

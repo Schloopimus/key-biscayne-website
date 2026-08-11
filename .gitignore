@@ -27,6 +27,9 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .cache
 *.tsbuildinfo
 
+# local database and uploaded demo files
+.data/
+
 # local coding-agent harness
 .omp/
 

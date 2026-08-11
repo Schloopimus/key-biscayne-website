@@ -2114,3 +2114,1013 @@
     }
   }
 }
+
+@layer pages {
+  .market-portal {
+    min-height: 100svh;
+    color: var(--green-deep);
+    background: #f4faf6;
+  }
+
+  .portal-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: grid;
+    min-height: 5.5rem;
+    padding: 1rem clamp(1.25rem, 4vw, 4rem);
+    background: rgb(255 255 255 / 97%);
+    border-bottom: 1px solid #dce9e0;
+    align-items: center;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: clamp(1rem, 3vw, 3rem);
+  }
+
+  .portal-brand {
+    display: flex;
+    min-width: max-content;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .portal-brand img {
+    width: 2.6rem;
+    height: 2.6rem;
+    object-fit: contain;
+  }
+
+  .portal-brand > span {
+    display: grid;
+    line-height: 1.05;
+    gap: 0.2rem;
+  }
+
+  .portal-brand strong {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+  }
+
+  .portal-brand small {
+    color: var(--green);
+    font-family: 'Barlow Semi Condensed', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .portal-nav {
+    display: flex;
+    overflow-x: auto;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.8rem, 2vw, 1.7rem);
+    scrollbar-width: thin;
+  }
+
+  .portal-nav a,
+  .portal-site-link {
+    position: relative;
+    min-width: max-content;
+    padding: 0.65rem 0;
+    color: #5c7267;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .portal-nav a::after {
+    position: absolute;
+    right: 0;
+    bottom: 0.3rem;
+    left: 0;
+    height: 2px;
+    background: var(--green);
+    content: '';
+    opacity: 0;
+    transform: scaleX(0.5);
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  .portal-nav a:hover::after,
+  .portal-nav a.is-active::after {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  .portal-nav a.is-active {
+    color: var(--green-deep);
+  }
+
+  .portal-site-link {
+    padding: 0.7rem 1rem;
+    color: white;
+    background: var(--green);
+    border-radius: 999px;
+  }
+
+  .demo-boundary {
+    display: flex;
+    min-height: 2.8rem;
+    padding: 0.65rem var(--page-pad);
+    color: #684f08;
+    background: #fdf3d6;
+    border-bottom: 1px solid #eadba8;
+    font-size: 0.78rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .demo-boundary strong {
+    font-family: 'Barlow Semi Condensed', sans-serif;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .portal-main {
+    width: min(100% - (2 * var(--page-pad)), 76rem);
+    min-height: calc(100svh - 8.3rem);
+    padding: clamp(3.5rem, 7vw, 6.5rem) 0 6rem;
+    margin: 0 auto;
+  }
+
+  .portal-page-heading {
+    display: grid;
+    max-width: 52rem;
+    margin-bottom: clamp(2rem, 4vw, 3.5rem);
+    gap: 0.75rem;
+  }
+
+  .portal-page-heading h1 {
+    color: var(--green-deep);
+    font-size: clamp(3rem, 6vw, 5rem);
+  }
+
+  .portal-page-heading > p:last-child {
+    max-width: 46rem;
+    color: #5c7267;
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .market-portal .eyebrow {
+    color: var(--green);
+  }
+
+  .portal-loading {
+    min-height: 20rem;
+    color: #5c7267;
+    display: grid;
+    place-content: center;
+  }
+
+  .portal-stack {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .portal-card,
+  .portal-table-card,
+  .portal-empty-state {
+    padding: clamp(1.4rem, 3vw, 2.2rem);
+    background: white;
+    border: 1px solid #dfe7e1;
+    border-radius: 1.4rem;
+    box-shadow: 0 1.5rem 4rem -3.25rem rgb(18 48 33 / 45%);
+  }
+
+  .portal-card {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .portal-card h2,
+  .portal-empty-state h2 {
+    color: var(--green-deep);
+    font-size: clamp(2rem, 4vw, 3rem);
+  }
+
+  .portal-card h3 {
+    color: var(--green-deep);
+  }
+
+  .portal-card__heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .portal-card__heading > div {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .portal-count {
+    color: var(--green);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3.5rem;
+    line-height: 1;
+  }
+
+  .portal-empty-state {
+    display: grid;
+    min-height: 18rem;
+    place-content: center;
+    gap: 0.8rem;
+  }
+
+  .portal-card .portal-empty-state {
+    min-height: 12rem;
+    padding: 1.25rem 0 0;
+    box-shadow: none;
+    border: 0;
+    border-top: 1px solid #e4ebe6;
+    border-radius: 0;
+  }
+
+  .portal-empty-state > p:not(.eyebrow),
+  .portal-card > p,
+  .portal-prose p {
+    color: #5c7267;
+    line-height: 1.65;
+  }
+
+  .portal-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem 2rem;
+  }
+
+  .portal-details > div {
+    display: grid;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid #e6ece8;
+    gap: 0.25rem;
+  }
+
+  .portal-details dt,
+  .portal-form label > span,
+  .portal-toolbar label > span,
+  .inventory-row label > span {
+    color: #7c8a78;
+    font-family: 'Barlow Semi Condensed', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .portal-details dd {
+    margin: 0;
+    color: var(--green-deep);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .portal-details--single {
+    grid-template-columns: 1fr;
+  }
+
+  .status-pill {
+    display: inline-flex;
+    width: fit-content;
+    min-height: 1.8rem;
+    padding: 0.35rem 0.8rem;
+    color: #4f6458;
+    background: #e6e9e5;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    align-items: center;
+    text-transform: uppercase;
+  }
+
+  .status-pill[data-status='approved'],
+  .status-pill[data-status='open'],
+  .status-pill[data-status='reserved'],
+  .status-pill[data-status='new'] {
+    color: #22573b;
+    background: #d9eee1;
+  }
+
+  .status-pill[data-status='pending'] {
+    color: #7a5d08;
+    background: #fdf3d6;
+  }
+
+  .status-pill[data-status='rejected'],
+  .status-pill[data-status='cancelled'],
+  .status-pill[data-status='closed'],
+  .status-pill[data-status='booked'] {
+    color: #8e3731;
+    background: #f0d3cf;
+  }
+
+  .status-pill[data-status='current'] {
+    color: #244f68;
+    background: #dcecf5;
+  }
+
+  .portal-callout,
+  .portal-error {
+    padding: 1rem 1.15rem;
+    color: #355d47;
+    background: #eaf5ee;
+    border: 1px solid #d5eadc;
+    border-radius: 0.8rem;
+    line-height: 1.55;
+  }
+
+  .portal-callout {
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .portal-callout--danger,
+  .portal-error {
+    color: #7f302c;
+    background: #fbebe9;
+    border-color: #efd4d1;
+  }
+
+  .portal-error {
+    margin-bottom: 1.25rem;
+  }
+
+  .portal-button--secondary {
+    color: var(--green-deep);
+    background: white;
+    border-color: #bdcfc3;
+  }
+
+  .portal-button--danger {
+    color: #8e3731;
+    background: #fff7f6;
+    border-color: #ddb5b1;
+  }
+
+  .portal-forget {
+    color: #66786e;
+  }
+
+  .portal-form {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .portal-form label,
+  .portal-toolbar label,
+  .inventory-row label {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .portal-form input,
+  .portal-form select,
+  .portal-form textarea,
+  .portal-toolbar select,
+  .inventory-row input,
+  .inventory-row select,
+  .stall-booking-controls select {
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.75rem 0.9rem;
+    color: var(--green-deep);
+    background: #fbfcfb;
+    border: 1px solid #cfdcd3;
+    border-radius: 0.65rem;
+  }
+
+  .portal-form textarea {
+    resize: vertical;
+  }
+
+  .portal-form label small {
+    color: #6f8076;
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+
+  .portal-form--inline {
+    grid-template-columns: 1.15fr 2fr 0.8fr 0.8fr auto;
+    align-items: end;
+  }
+
+  .portal-form-note {
+    padding-top: 1rem;
+    border-top: 1px solid #e4ebe6;
+    font-size: 0.8rem;
+  }
+
+  .form-error,
+  .form-progress {
+    padding: 0.8rem 1rem;
+    border-radius: 0.65rem;
+    font-size: 0.85rem;
+  }
+
+  .form-error {
+    color: #822f2a;
+    background: #fbebe9;
+  }
+
+  .form-progress {
+    color: var(--navy-deep);
+    background: #e8f2f8;
+  }
+
+  .portal-metrics {
+    display: grid;
+    margin-bottom: 1.25rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .portal-metrics article {
+    display: grid;
+    min-height: 10.5rem;
+    padding: 1.35rem;
+    color: white;
+    background: var(--green);
+    border-radius: 1.2rem;
+    align-content: space-between;
+    gap: 0.4rem;
+  }
+
+  .portal-metrics article:nth-child(even) {
+    color: var(--green-deep);
+    background: #dcece1;
+  }
+
+  .portal-metrics p,
+  .portal-metrics span {
+    font-family: 'Barlow Semi Condensed', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .portal-metrics strong {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 3.2rem;
+    line-height: 1;
+  }
+
+  .portal-dashboard-grid,
+  .application-review-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(20rem, 0.75fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  .portal-list {
+    display: grid;
+  }
+
+  .portal-list-row {
+    display: flex;
+    padding: 1rem 0;
+    border-top: 1px solid #e4ebe6;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .portal-list-row > div:first-child {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .portal-list-row span,
+  .portal-list-row small {
+    color: #6b7d72;
+    font-size: 0.78rem;
+  }
+
+  .portal-list-row__meta {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .activity-list,
+  .revision-list {
+    display: grid;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .activity-list li,
+  .revision-list li {
+    display: flex;
+    padding: 0.9rem 0;
+    border-top: 1px solid #e4ebe6;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+
+  .activity-list li > span {
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-top: 0.35rem;
+    background: var(--green);
+    border-radius: 50%;
+    flex: 0 0 auto;
+  }
+
+  .activity-list li > div,
+  .revision-list li > div {
+    display: grid;
+    margin-right: auto;
+    gap: 0.25rem;
+  }
+
+  .activity-list small,
+  .revision-list small {
+    color: #7c8a78;
+    font-size: 0.7rem;
+  }
+
+  .portal-toolbar {
+    display: flex;
+    min-height: 5rem;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    background: white;
+    border: 1px solid #dfe7e1;
+    border-radius: 1rem;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .portal-toolbar label {
+    width: min(100%, 18rem);
+  }
+
+  .portal-toolbar > span {
+    color: #6b7d72;
+    font-size: 0.78rem;
+  }
+
+  .portal-table-card {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .portal-table__header,
+  .portal-table__row {
+    display: grid;
+    padding: 0 1.4rem;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .portal-table__header {
+    min-height: 3.5rem;
+    color: #708076;
+    background: #f8faf8;
+    border-bottom: 1px solid #dfe7e1;
+    font-family: 'Barlow Semi Condensed', sans-serif;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .portal-table__row {
+    min-height: 5.25rem;
+    border-bottom: 1px solid #e4ebe6;
+    font-size: 0.82rem;
+  }
+
+  .portal-table__row:last-child {
+    border-bottom: 0;
+  }
+
+  .portal-table__row > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .portal-table__row > span > strong,
+  .portal-table__row > span > small {
+    display: block;
+  }
+
+  .portal-table__row small {
+    margin-top: 0.2rem;
+    color: #77877e;
+    font-size: 0.7rem;
+  }
+
+  .portal-table__row a {
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  .portal-table--applications .portal-table__header,
+  .portal-table--applications .portal-table__row {
+    grid-template-columns: 1.3fr 1.25fr 0.55fr 0.75fr 0.8fr 0.95fr;
+  }
+
+  .portal-table--vendors .portal-table__header,
+  .portal-table--vendors .portal-table__row {
+    grid-template-columns: 1.35fr 1fr 1.35fr 0.8fr 0.9fr;
+  }
+
+  .portal-table--bookings .portal-table__header,
+  .portal-table--bookings .portal-table__row {
+    grid-template-columns: 1.35fr 1.2fr 0.65fr 0.65fr 0.75fr 1fr;
+  }
+
+  .submission-message {
+    padding: 1rem;
+    white-space: pre-wrap;
+    background: #f8faf8;
+    border-left: 3px solid #a8c7b3;
+  }
+
+  .stall-booking-layout,
+  .market-admin-layout {
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.38fr) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  .stall-booking-controls {
+    position: sticky;
+    top: 8.8rem;
+  }
+
+  .stall-booking-controls label {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .stall-booking-controls label > span {
+    color: #7c8a78;
+    font-family: 'Barlow Semi Condensed', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .diagram-placeholder {
+    display: grid;
+    min-height: 12rem;
+    padding: 1.25rem;
+    color: #5c7267;
+    background: repeating-linear-gradient(-45deg, #f6faf7, #f6faf7 10px, #edf4ef 10px, #edf4ef 20px);
+    border: 1px dashed #9eb6a6;
+    border-radius: 1rem;
+    place-content: center;
+    text-align: center;
+    gap: 0.25rem;
+  }
+
+  .diagram-placeholder span {
+    font-family: 'Barlow Semi Condensed', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .diagram-placeholder strong {
+    color: var(--green-deep);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.2rem;
+  }
+
+  .diagram-placeholder p {
+    max-width: 22rem;
+    font-size: 0.76rem;
+    line-height: 1.5;
+  }
+
+  .diagram-placeholder--wide {
+    min-height: 9rem;
+  }
+
+  .stall-list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.7rem;
+  }
+
+  .stall-option {
+    display: grid;
+    min-height: 8.5rem;
+    padding: 1rem;
+    color: var(--green-deep);
+    background: #f8faf8;
+    border: 1px solid #d5e2d8;
+    border-radius: 0.9rem;
+    align-content: start;
+    text-align: left;
+    gap: 0.25rem;
+  }
+
+  .stall-option strong {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem;
+  }
+
+  .stall-option > span:not(.status-pill) {
+    color: #687b70;
+    font-size: 0.72rem;
+    text-transform: capitalize;
+  }
+
+  .stall-option[aria-pressed='true'] {
+    background: #eaf5ee;
+    border-color: var(--green);
+    box-shadow: 0 0 0 2px rgb(47 122 86 / 16%);
+  }
+
+  .stall-option:disabled {
+    cursor: not-allowed;
+    opacity: 0.56;
+  }
+
+  .stall-option .status-pill {
+    margin-top: 0.45rem;
+  }
+
+  .selected-stall {
+    display: grid;
+    padding: 1.2rem;
+    background: #eaf5ee;
+    border-radius: 1rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 1rem;
+  }
+
+  .selected-stall > div {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .selected-stall > strong {
+    color: var(--green);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.2rem;
+  }
+
+  .selected-stall > strong small {
+    font-size: 1rem;
+  }
+
+  .selected-stall > button {
+    grid-column: 1 / -1;
+  }
+
+  .booking-card {
+    grid-template-columns: 1fr;
+  }
+
+  .market-date-list {
+    position: sticky;
+    top: 8.8rem;
+    align-content: start;
+  }
+
+  .market-date-list > button {
+    display: flex;
+    padding: 1rem 0;
+    color: var(--green-deep);
+    background: transparent;
+    border-top: 1px solid #e1e9e3;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    gap: 0.8rem;
+  }
+
+  .market-date-list > button > span:first-child {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .market-date-list > button small {
+    color: #718279;
+  }
+
+  .market-date-list > button.is-active strong {
+    color: var(--green);
+  }
+
+  .inventory-editor {
+    display: grid;
+  }
+
+  .inventory-row {
+    display: grid;
+    min-height: 5.5rem;
+    padding: 0.8rem 0;
+    border-top: 1px solid #e1e9e3;
+    grid-template-columns: minmax(6rem, 1fr) minmax(7rem, 1fr) minmax(6rem, 0.75fr) auto auto;
+    align-items: end;
+    gap: 0.7rem;
+  }
+
+  .inventory-row > div {
+    display: grid;
+    align-self: center;
+    gap: 0.2rem;
+  }
+
+  .inventory-row small {
+    color: #718279;
+  }
+
+  .inventory-active {
+    display: flex !important;
+    min-height: 3rem;
+    padding: 0 0.4rem;
+    align-items: center;
+    gap: 0.4rem !important;
+  }
+
+  .inventory-active input {
+    width: 1rem;
+    min-height: auto;
+    accent-color: var(--green);
+  }
+
+  .application-review-grid {
+    margin-bottom: 1.25rem;
+  }
+
+  .portal-prose {
+    display: grid;
+    gap: 0.6rem;
+  }
+}
+
+@layer responsive {
+  @media (max-width: 70rem) {
+    .portal-header {
+      grid-template-columns: auto 1fr auto;
+    }
+
+    .portal-nav {
+      justify-content: flex-start;
+    }
+
+    .portal-nav a {
+      font-size: 0.68rem;
+    }
+
+    .portal-form--inline {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .portal-form--inline .button {
+      grid-column: 1 / -1;
+    }
+
+    .portal-metrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .stall-list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .inventory-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .inventory-row > div {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 56rem) {
+    .portal-header {
+      position: relative;
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .portal-nav {
+      padding-top: 0.45rem;
+      border-top: 1px solid #e1e9e3;
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-content: flex-start;
+    }
+
+    .portal-main {
+      min-height: auto;
+    }
+
+    .portal-dashboard-grid,
+    .application-review-grid,
+    .stall-booking-layout,
+    .market-admin-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .stall-booking-controls,
+    .market-date-list {
+      position: static;
+    }
+
+    .portal-table__header {
+      display: none;
+    }
+
+    .portal-table__row {
+      display: grid;
+      padding: 1.25rem;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      align-items: start;
+      gap: 1rem;
+    }
+
+    .portal-table__row > span::before {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: #7c8a78;
+      content: attr(data-label);
+      font-family: 'Barlow Semi Condensed', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+  }
+
+  @media (max-width: 38rem) {
+    .portal-header {
+      padding: 0.85rem 1rem;
+    }
+
+    .portal-brand strong {
+      font-size: 1.05rem;
+    }
+
+    .portal-site-link {
+      padding: 0.6rem 0.8rem;
+      font-size: 0.66rem;
+    }
+
+    .demo-boundary {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .portal-main {
+      width: min(100% - 2rem, 76rem);
+      padding-top: 3rem;
+    }
+
+    .portal-card__heading,
+    .portal-list-row,
+    .portal-toolbar {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .portal-details,
+    .portal-metrics,
+    .portal-form--inline,
+    .portal-table__row,
+    .selected-stall,
+    .inventory-row {
+      grid-template-columns: 1fr !important;
+    }
+
+    .portal-toolbar label,
+    .portal-card .button-row,
+    .portal-card .button-row .button,
+    .portal-form .button {
+      width: 100%;
+    }
+
+    .portal-table__row > span {
+      width: 100%;
+    }
+
+    .stall-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .inventory-row > div,
+    .portal-form--inline .button {
+      grid-column: auto;
+    }
+  }
+}

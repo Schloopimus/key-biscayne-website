@@ -1,8 +1,8 @@
 # Static Site Implementation
 
-Status: working local product as of 2026-07-22.
+Status: working public site and local operations demo as of 2026-08-11.
 
-This document describes the implemented public website end to end. Product scope and future market-management architecture remain documented in [`entire-website-analysis.md`](./entire-website-analysis.md).
+This document describes the implemented public website and the boundaries of the local Farmers Market demo. Product scope and production architecture remain documented in [`entire-website-analysis.md`](./entire-website-analysis.md).
 
 ## 1. Current scope
 
@@ -18,33 +18,33 @@ Implemented routes:
 - `/mission` — ministries, outreach, worship team, and volunteer interest
 - `/farmers-market` — public market information, vendor process, and vendor gallery
 
-This phase deliberately does **not** include:
+The repository also contains a deliberately local-only Farmers Market operations demo:
 
-- Database storage
-- Real form submission or email delivery
-- Better Auth
-- Vendor accounts or the market dashboard
-- Stripe payments
-- Resend
-- R2 uploads
-- Railway, Render, Vercel, or other deployment configuration
-- A CMS
+- Drizzle-backed SQLite persistence under gitignored `.data/`
+- Persistent contact, volunteer, and school-interest submissions with an admin inbox
+- Vendor application and immutable revision status
+- Local health-certificate upload and download
+- Admin application review, vendor directory, market dates, stall inventory, and booking records
+- Accessible single-date stall reservation, change, and cancellation
 
-The three public forms are reviewable local interactions. They validate required browser fields, reset after submission, and show an explicit local-preview success message. They send and retain no data.
+It deliberately does **not** include Better Auth, real accounts, outbound email, Stripe payments, private R2 storage, Turnstile, or deployment configuration. Every portal page labels those boundaries; no action pretends an external service is connected.
+
+The three public forms validate required browser fields and persist submissions to the local SQLite inbox. They reset after a successful write and state that email delivery is not connected.
 
 ## 2. Stack
 
 The current site is one application:
 
 - Bun for package management and commands
-- TanStack Start
-- TanStack Router file routes
+- TanStack Start server functions and file routes
+- TanStack Router
 - React 19
 - TypeScript
 - Rsbuild
+- Drizzle ORM with `better-sqlite3` in Rsbuild development and `bun:sqlite` in the Bun production bundle
 - Plain CSS with custom properties and responsive media queries
 
-There is no component library, CSS framework, API layer, global state library, or backend service.
+There is no component library, CSS framework, separate API service, global state library, or external backend service.
 
 ### Commands
 
@@ -408,6 +408,17 @@ Observed browser checks:
 
 No automated tests were written, by request.
 
+The local Farmers Market demo was additionally exercised on 2026-08-11:
+
+- A vendor application and PDF certificate persisted locally.
+- The certificate endpoint returned the stored 133-byte PDF with attachment headers.
+- Admin review changed the application from pending to approved.
+- The approved vendor reserved A1, changed to A2, and cancelled the booking.
+- Market booking status closed and reopened; an A1 price update survived reload and was restored.
+- A public contact submission appeared in the admin inbox and was archived.
+- Keyboard focus was visible, Space selected a stall, and portal routes had no horizontal overflow at 1440 × 1000 and 390 × 844.
+- `bun run check` and `bun run build` passed.
+
 ## 13. Safe editing workflow
 
 Before changing the site:
@@ -428,6 +439,6 @@ Avoid prompts such as “make it modern,” “redesign everything,” or “use
 
 ## 14. Next product boundary
 
-The next major phase is not another static redesign. It is the separately designed Farmers Market signup and admin product from Figma node `251:339`.
+The Figma-derived Farmers Market product now has a locally working data and workflow demo inside the existing TanStack Start application. The next boundary is production integration, not a second frontend or a redesign.
 
-When that phase is approved, the accepted architecture is documented in `entire-website-analysis.md`. It should extend this same TanStack Start/Bun application rather than replacing it or creating a second frontend.
+Do not connect Better Auth, email, R2, Stripe, Turnstile, or deployment until the owner approves the relevant product rules. Month/quarter/year booking semantics, pricing policy, cancellation/refund rules, recipients, retention, and the final three-dimensional stall diagram remain unresolved in `entire-website-analysis.md`.

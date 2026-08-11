@@ -1,27 +1,42 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
+import { submitPublicForm } from '../server/submissions.functions'
 
 type FormShellProps = {
-  children: React.ReactNode
+  children: ReactNode
+  submissionType: 'contact' | 'volunteer' | 'school'
   successMessage: string
   className?: string
 }
 
-function FormShell({ children, successMessage, className = '' }: FormShellProps) {
-  const [submitted, setSubmitted] = useState(false)
+function FormShell({ children, submissionType, successMessage, className = '' }: FormShellProps) {
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'submitted'>('idle')
+  const [error, setError] = useState('')
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setSubmitted(true)
-    event.currentTarget.reset()
+    if (status === 'submitting') return
+
+    const form = event.currentTarget
+    setStatus('submitting')
+    setError('')
+
+    try {
+      await submitPublicForm({ data: new FormData(form) })
+      form.reset()
+      setStatus('submitted')
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'The response could not be saved.')
+      setStatus('idle')
+    }
   }
 
-  if (submitted) {
+  if (status === 'submitted') {
     return (
       <div className={`form-success ${className}`} role="status">
         <span aria-hidden="true">✓</span>
         <h3>Thank you for reaching out.</h3>
         <p>{successMessage}</p>
-        <button className="text-link" type="button" onClick={() => setSubmitted(false)}>
+        <button className="text-link" type="button" onClick={() => setStatus('idle')}>
           Send another response →
         </button>
       </div>
@@ -29,15 +44,21 @@ function FormShell({ children, successMessage, className = '' }: FormShellProps)
   }
 
   return (
-    <form className={`static-form ${className}`} onSubmit={submit}>
+    <form className={`static-form ${className}`} onSubmit={submit} aria-busy={status === 'submitting'}>
+      <input type="hidden" name="submissionType" value={submissionType} />
       {children}
+      {error ? <p className="form-error" role="alert">{error}</p> : null}
+      {status === 'submitting' ? <p className="form-progress" role="status">Saving locally…</p> : null}
     </form>
   )
 }
 
 export function ContactForm() {
   return (
-    <FormShell successMessage="This local preview has captured the interaction only. Email delivery will be connected in the next phase.">
+    <FormShell
+      submissionType="contact"
+      successMessage="Your message is saved in the local demo inbox. Email delivery is not connected."
+    >
       <div className="field-row">
         <label>
           <span>First name *</span>
@@ -83,8 +104,9 @@ export function ContactForm() {
 export function VolunteerForm() {
   return (
     <FormShell
+      submissionType="volunteer"
       className="static-form--sand"
-      successMessage="This is a local interaction preview. Volunteer-email delivery will be connected later."
+      successMessage="Your volunteer interest is saved in the local demo inbox. Email delivery is not connected."
     >
       <div className="field-row">
         <label>
@@ -154,8 +176,9 @@ export function SchoolInterestForm() {
         ))}
       </div>
       <FormShell
+        submissionType="school"
         className="static-form--dark"
-        successMessage="This local preview has captured the interaction only. Registration delivery and storage will be connected later."
+        successMessage="Your registration interest is saved in the local demo inbox. Email delivery is not connected."
       >
         <div id="registration-fields" className="field-group">
           <p>Child’s name</p>

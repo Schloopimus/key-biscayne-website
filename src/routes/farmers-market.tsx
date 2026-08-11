@@ -1,5 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
 import { ScrollCue, SectionNav } from '../components/ScrollSections'
 import { SectionHeading, SiteFooter } from '../components/SitePieces'
 import { SiteHeader } from '../components/SiteHeader'
@@ -40,7 +39,6 @@ export const Route = createFileRoute('/farmers-market')({
 })
 
 function FarmersMarketPage() {
-  const [portalNotice, setPortalNotice] = useState(false)
 
   return (
     <div className="page-shell market-page">
@@ -58,21 +56,13 @@ function FarmersMarketPage() {
                 welcoming atmosphere that feels like classic Key Biscayne.
               </p>
               <div className="button-row">
-                <a className="button button--market" href="#vendor-process">
-                  Book a stall <span aria-hidden="true">→</span>
+                <a className="button button--market" href="/farmers-market/vendor/application">
+                  Apply as a vendor <span aria-hidden="true">→</span>
                 </a>
-                <button className="button button--ghost" type="button" onClick={() => setPortalNotice(true)}>
-                  Log in
-                </button>
+                <a className="button button--ghost" href="/farmers-market/vendor">
+                  Vendor portal
+                </a>
               </div>
-              {portalNotice ? (
-                <div className="portal-notice" role="status">
-                  <p>The vendor portal is the next build phase. This static review keeps you here.</p>
-                  <button type="button" onClick={() => setPortalNotice(false)} aria-label="Dismiss notice">
-                    ×
-                  </button>
-                </div>
-              ) : null}
             </div>
             <figure className="portrait-card portrait-card--market">
               <img src="/images/market-hero.png" alt="Fresh produce at the Key Biscayne Farmers Market" />
@@ -93,17 +83,9 @@ function FarmersMarketPage() {
               </li>
             ))}
           </ol>
-          <button className="button button--market-dark" type="button" onClick={() => setPortalNotice(true)}>
-            Book a stall <span aria-hidden="true">→</span>
-          </button>
-          {portalNotice ? (
-            <div className="portal-notice portal-notice--light" role="status">
-              <p>Vendor signup and account management will be connected after the static-site review.</p>
-              <button type="button" onClick={() => setPortalNotice(false)} aria-label="Dismiss notice">
-                ×
-              </button>
-            </div>
-          ) : null}
+          <a className="button button--market-dark" href="/farmers-market/vendor/application">
+            Start vendor application <span aria-hidden="true">→</span>
+          </a>
         </section>
 
         <section id="market-vendors" className="page-section market-vendors-section">

@@ -5,7 +5,7 @@ Build **one Bun monolith**, not a collection of services:
 - **Bun** for package management, development, build, and production runtime.
 - **TanStack Start + React 19 + TypeScript** for the public site, vendor application, booking flow, and admin dashboard.
 - **Better Auth** inside the same application for vendor/admin email-password authentication and sessions.
-- **Drizzle + `bun:sqlite`** for application data and Better Auth tables.
+- **Drizzle + SQLite** for application data and Better Auth tables. Rsbuild development uses `better-sqlite3`; the Bun production bundle uses `bun:sqlite`.
 - **Resend** for transactional email.
 - **Private Cloudflare R2** only for health-certificate uploads and encrypted database backups.
 - **Stripe Checkout** for stall payments; the application never handles card fields.
@@ -21,6 +21,13 @@ Both exact Figma sections were analyzed in parallel:
 - [Farmers-market system — node `251:339`](https://www.figma.com/design/uA8xQYR2zK6oBKpm97K1mm/Key-Biscayne-Church?node-id=251-339)
 
 At the time of this planning analysis, the repository was greenfield. The five public static routes have since been implemented; see [`static-site-implementation.md`](./static-site-implementation.md) for the current code, interactions, constraints, and verification record.
+
+Implementation status as of 2026-08-11:
+
+- The five public routes are complete.
+- A local-only Farmers Market operations demo now persists public form submissions, vendor applications, certificate files, market dates, stalls, audit records, and bookings.
+- Vendor and admin routes are intentionally unauthenticated demo surfaces. Email, payments, R2, Turnstile, and deployment remain unconnected.
+- The final three-dimensional stall diagram remains a labeled placeholder because its Figma behavior and source asset are unresolved.
 
 ---
 
