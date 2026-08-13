@@ -45,8 +45,14 @@ function AboutPage() {
           <div className="location-grid">
             <div>
               <SectionHeading eyebrow="Find us" title="On the island, by the sea" />
-              <div className="landscape-image">
-                <img src="/images/church-location.png" alt="Key Biscayne Community Church exterior and grounds" />
+              <div className="landscape-image location-map">
+                <iframe
+                  title="Map showing Key Biscayne Community Church at 355 Glenridge Road"
+                  src="https://www.google.com/maps?q=355+Glenridge+Rd,+Key+Biscayne,+FL+33149&output=embed"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
+                />
               </div>
             </div>
             <div className="contact-cards">
