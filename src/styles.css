@@ -1288,6 +1288,11 @@
     margin-inline: auto;
   }
 
+  .schedule-section .section-heading h2 {
+    max-width: 100%;
+    font-size: clamp(2.6rem, 4.45vw, 4rem);
+  }
+
   .about-intro {
     padding-top: var(--header-h);
     padding-bottom: var(--header-h);
@@ -2307,6 +2312,10 @@
 
     h2 {
       font-size: clamp(2.6rem, 13vw, 3.8rem);
+    }
+
+    .schedule-section .section-heading h2 {
+      font-size: clamp(2.6rem, 11vw, 3.25rem);
     }
 
     .brand__mark {
