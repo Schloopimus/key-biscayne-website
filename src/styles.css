@@ -2306,16 +2306,12 @@
       --header-h: 4.6rem;
     }
 
-    h1 {
-      font-size: clamp(3rem, 16vw, 4.4rem);
-    }
-
-    h2 {
-      font-size: clamp(2.6rem, 13vw, 3.8rem);
-    }
-
-    .schedule-section .section-heading h2 {
-      font-size: clamp(2.6rem, 11vw, 3.25rem);
+    .page-section .section-heading h2,
+    .page-section .event-heading h2,
+    .page-section .invitation-copy h2,
+    .contact-layout h2 {
+      font-size: clamp(2.35rem, 10.5vw, 2.75rem);
+      line-height: 1;
     }
 
     .brand__mark {
@@ -2332,12 +2328,13 @@
       padding: 1.4rem;
     }
 
-    .glass-hero h1 {
-      font-size: clamp(3rem, 15vw, 4rem);
+    .glass-hero h1,
+    .split-layout--hero h1 {
+      font-size: clamp(2.8rem, 13vw, 3.4rem);
     }
 
     .quote-block h1 {
-      font-size: clamp(3rem, 13vw, 3.75rem);
+      font-size: clamp(2.6rem, 11.5vw, 3rem);
     }
 
     .button-row,
