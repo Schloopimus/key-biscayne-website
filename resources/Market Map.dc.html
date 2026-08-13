@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  html,body{margin:0;padding:0;}
+  *{box-sizing:border-box;}
+  a{color:#3f86d0;} a:hover{color:#2f6ba8;}
+  #root{background:#7d9481;}
+</style>
+</helmet>
+<div style="position:relative; width:100%; height:100vh; background:{{ bg }}; overflow:hidden; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+
+  <div style="position:absolute; top:22px; left:26px; z-index:5; background:rgba(255,255,255,0.92); border:1px solid rgba(70,87,80,0.18); border-radius:12px; padding:16px 18px; box-shadow:0 6px 22px rgba(40,55,45,0.18); max-width:240px;">
+    <div style="font-size:15px; font-weight:700; letter-spacing:.3px; color:#31413a; margin-bottom:2px;">Market Map</div>
+    <div style="font-size:11.5px; color:#5b6b62; margin-bottom:14px;">Tap a stall for details</div>
+    <div style="display:flex; flex-direction:column; gap:9px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="width:20px; height:16px; border-radius:3px; background:#e08a7f; border:1.6px solid #a23a2c; display:inline-block;"></span>
+        <span style="font-size:12px; color:#3a463f;">Booked</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="width:20px; height:16px; border-radius:3px; background:#f4f6f1; border:2.4px solid #2f74c4; display:inline-block;"></span>
+        <span style="font-size:12px; color:#3a463f;">Corner</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="width:20px; height:16px; border-radius:3px; background:#f4f6f1; border:2.4px solid #e0a01e; display:inline-block;"></span>
+        <span style="font-size:12px; color:#3a463f;">Premium</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="width:20px; height:16px; border-radius:3px; background:#f4f6f1; border:1.6px solid #7c8a7f; display:inline-block;"></span>
+        <span style="font-size:12px; color:#3a463f;">Available</span>
+      </div>
+    </div>
+  </div>
+
+  <svg viewBox="400 175 2530 1235" onPointerDown="{{ onDown }}" onPointerMove="{{ onMove }}" onPointerUp="{{ onUp }}" onPointerLeave="{{ onUp }}" onWheel="{{ onWheel }}" style="position:absolute; inset:0; width:100%; height:100%; display:block; cursor:grab; touch-action:none;">
+    <defs>
+      <filter id="softsh" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="7"></feGaussianBlur>
+      </filter>
+    </defs>
+
+    <g transform="{{ camera }}">
+
+    <sc-for list="{{ roads }}" as="rd" hint-placeholder-count="12">
+      <polygon points="{{ rd }}" fill="#f2f3ed" stroke="#e4e6de" stroke-width="1.5" stroke-linejoin="round"></polygon>
+    </sc-for>
+
+    <sc-for list="{{ flats }}" as="f" hint-placeholder-count="8">
+      <polygon points="{{ f.points }}" fill="{{ f.fill }}" stroke="{{ f.stroke }}" stroke-width="1.5" stroke-linejoin="round"></polygon>
+      <sc-if value="{{ f.label }}" hint-placeholder-val="{{ true }}">
+        <text x="{{ f.lx }}" y="{{ f.ly }}" fill="{{ f.color }}" font-size="{{ f.fs }}" text-anchor="middle" dominant-baseline="middle" font-family="{{ f.family }}" font-style="{{ f.italic }}" font-weight="{{ f.weight }}" style="letter-spacing:.6px;">{{ f.label }}</text>
+      </sc-if>
+    </sc-for>
+
+    <sc-for list="{{ solids }}" as="s" hint-placeholder-count="30">
+      <g cursor="{{ s.cursor }}" style="transition: transform .16s ease, filter .16s ease; transform-box: fill-box;" style-hover="transform: translate(0px,-14px); filter: brightness(1.05);">
+        <sc-if value="{{ s.isBuilding }}" hint-placeholder-val="{{ true }}">
+          <sc-for list="{{ s.faces }}" as="face" hint-placeholder-count="3">
+            <polygon points="{{ face.points }}" fill="{{ face.fill }}" stroke="{{ s.stroke }}" stroke-width="{{ s.sw }}" stroke-linejoin="round"></polygon>
+          </sc-for>
+          <sc-if value="{{ s.label }}" hint-placeholder-val="{{ true }}">
+            <text x="{{ s.lx }}" y="{{ s.ly }}" fill="#3f4c44" font-size="{{ s.fs }}" text-anchor="middle" dominant-baseline="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="600" style="letter-spacing:.5px;">{{ s.label }}</text>
+          </sc-if>
+        </sc-if>
+        <sc-if value="{{ s.isFence }}" hint-placeholder-val="{{ true }}">
+          <sc-for list="{{ s.posts }}" as="p" hint-placeholder-count="12">
+            <line x1="{{ p.x1 }}" y1="{{ p.y1 }}" x2="{{ p.x2 }}" y2="{{ p.y2 }}" stroke="{{ s.stroke }}" stroke-width="3" stroke-linecap="round"></line>
+          </sc-for>
+          <polyline points="{{ s.topRail }}" fill="none" stroke="{{ s.stroke }}" stroke-width="3" stroke-linecap="round"></polyline>
+          <polyline points="{{ s.midRail }}" fill="none" stroke="{{ s.stroke }}" stroke-width="2.4" stroke-linecap="round"></polyline>
+        </sc-if>
+        <sc-if value="{{ s.isTree }}" hint-placeholder-val="{{ true }}">
+          <rect x="{{ s.tx }}" y="{{ s.ty }}" width="{{ s.tw }}" height="{{ s.th }}" fill="#7a5c3a" rx="2"></rect>
+          <circle cx="{{ s.cx }}" cy="{{ s.ccy }}" r="{{ s.cr }}" fill="#61814f" stroke="#4f6b41" stroke-width="1.5"></circle>
+          <circle cx="{{ s.chx }}" cy="{{ s.chy }}" r="{{ s.crm }}" fill="#7fa268"></circle>
+        </sc-if>
+      </g>
+    </sc-for>
+
+    </g>
+  </svg>
+
+  <div style="position:absolute; right:20px; bottom:22px; z-index:5; display:flex; flex-direction:column; gap:8px;">
+    <button onClick="{{ zoomIn }}" style="width:44px; height:44px; border-radius:11px; border:1px solid rgba(70,87,80,0.18); background:rgba(255,255,255,0.94); color:#31413a; font-size:22px; line-height:1; cursor:pointer; box-shadow:0 4px 14px rgba(40,55,45,0.18);">+</button>
+    <button onClick="{{ zoomOut }}" style="width:44px; height:44px; border-radius:11px; border:1px solid rgba(70,87,80,0.18); background:rgba(255,255,255,0.94); color:#31413a; font-size:24px; line-height:1; cursor:pointer; box-shadow:0 4px 14px rgba(40,55,45,0.18);">&minus;</button>
+    <button onClick="{{ resetView }}" style="width:44px; height:44px; border-radius:11px; border:1px solid rgba(70,87,80,0.18); background:rgba(255,255,255,0.94); color:#31413a; font-size:12px; font-weight:600; cursor:pointer; box-shadow:0 4px 14px rgba(40,55,45,0.18);">Reset</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;bg&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#7d9481&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#7d9481&quot;,&quot;#8a9a86&quot;,&quot;#6f8677&quot;,&quot;#9aa79b&quot;]},&quot;showLabels&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { tx: 0, ty: 0, k: 1 };
+  _dragging = false; _moved = false; _lx = 0; _ly = 0;
+
+  onDown = (e) => {
+    this._dragging = true; this._moved = false;
+    this._lx = e.clientX; this._ly = e.clientY;
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+  };
+  onMove = (e) => {
+    if (!this._dragging) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const ratio = 2530 / r.width;
+    const dx = (e.clientX - this._lx) * ratio, dy = (e.clientY - this._ly) * ratio;
+    if (Math.abs(e.clientX - this._lx) + Math.abs(e.clientY - this._ly) > 3) this._moved = true;
+    this._lx = e.clientX; this._ly = e.clientY;
+    this.setState(s => ({ tx: s.tx + dx, ty: s.ty + dy }));
+  };
+  onUp = (e) => {
+    this._dragging = false;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch (_) {}
+  };
+  onWheel = (e) => {
+    e.preventDefault();
+    const r = e.currentTarget.getBoundingClientRect();
+    const vbX = 400 + (e.clientX - r.left) * (2530 / r.width);
+    const vbY = 175 + (e.clientY - r.top) * (1235 / r.height);
+    this.zoomAt(vbX, vbY, e.deltaY < 0 ? 1.12 : 1 / 1.12);
+  };
+  zoomAt(vbX, vbY, f) {
+    this.setState(s => {
+      const k = Math.max(0.45, Math.min(4, s.k * f));
+      const cx = (vbX - s.tx) / s.k, cy = (vbY - s.ty) / s.k;
+      return { k, tx: vbX - cx * k, ty: vbY - cy * k };
+    });
+  }
+  zoomIn = () => this.zoomAt(400 + 1265, 175 + 617, 1.25);
+  zoomOut = () => this.zoomAt(400 + 1265, 175 + 617, 1 / 1.25);
+  resetView = () => this.setState({ tx: 0, ty: 0, k: 1 });
+
+  renderVals() {
+    const bg = this.props.bg ?? '#7d9481';
+    const showLabels = this.props.showLabels ?? true;
+
+    const offX = 1240, offY = 190, S = 1.6;
+    const proj = (px, py) => [(px - py) + offX, (px + py) * 0.5 + offY];
+    const pt = p => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
+
+    const H = { booked:118, premium:150, corner:132, available:56, structure:60, dumpster:40, fence:22 };
+    const PAL = {
+      booked:    { top:'#e08a7f', right:'#c05f52', left:'#d5746a', stroke:'#a23a2c', sw:1.6 },
+      premium:   { top:'#f4f6f1', right:'#d3d9cf', left:'#e6e9e0', stroke:'#e0a01e', sw:3.2 },
+      corner:    { top:'#f4f6f1', right:'#d3d9cf', left:'#e6e9e0', stroke:'#2f74c4', sw:3.2 },
+      available: { top:'#f4f6f1', right:'#d3d9cf', left:'#e6e9e0', stroke:'#7c8a7f', sw:1.6 },
+      structure: { top:'#d8d2c0', right:'#bbb4a0', left:'#cbc5b1', stroke:'#8f8871', sw:1.6 },
+      dumpster:  { top:'#909a8f', right:'#727d72', left:'#828d81', stroke:'#5e695f', sw:1.4 }
+    };
+
+    const solids = [];
+    const HEIGHT = 96;
+    const buildingsFoot = [];
+    const inBuilding = (cx, cy, m) => buildingsFoot.some(f => cx > f.x - m && cx < f.x + f.w + m && cy > f.y - m && cy < f.y + f.h + m);
+
+    const addBox = (x, y, w, h, kind, label, fs) => {
+      const h3 = HEIGHT, p = PAL[kind] || PAL.booked;
+      buildingsFoot.push({ x, y, w, h });
+      const X = x * S, Y = y * S;
+      const a = proj(X, Y), b = proj(X + w, Y), c = proj(X + w, Y + h), d = proj(X, Y + h);
+      const up = q => [q[0], q[1] - h3];
+      const At = up(a), Bt = up(b), Ct = up(c), Dt = up(d);
+      const top   = `${pt(At)} ${pt(Bt)} ${pt(Ct)} ${pt(Dt)}`;
+      const right = `${pt(b)} ${pt(c)} ${pt(Ct)} ${pt(Bt)}`;
+      const left  = `${pt(d)} ${pt(c)} ${pt(Ct)} ${pt(Dt)}`;
+      const cx = (At[0]+Bt[0]+Ct[0]+Dt[0])/4, cy = (At[1]+Bt[1]+Ct[1]+Dt[1])/4;
+      const clickable = ['booked','premium','corner','available'].includes(kind);
+      const useLabel = showLabels && label ? label : '';
+      solids.push({
+        isBuilding:true, isTree:false,
+        faces:[{points:left,fill:p.left},{points:right,fill:p.right},{points:top,fill:p.top}],
+        stroke:p.stroke, sw:p.sw, cursor:clickable?'pointer':'default',
+        label:useLabel, lx:cx, ly:cy, fs:fs||0, depth:(x+w/2)+(y+h/2)
+      });
+    };
+
+    const addTree = (x, y) => {
+      const g = proj(x * S, y * S), cx = g[0], cy = g[1];
+      const th = 26, tw = 8, cr = 24;
+      solids.push({
+        isBuilding:false, isTree:true,
+        tx:cx-tw/2, ty:cy-th, tw, th,
+        cx, ccy:cy-th-16, cr,
+        chx:cx-6, chy:cy-th-22, crm:13,
+        cursor:'default', depth:x+y
+      });
+    };
+
+    const addFence = (x1, y1, x2, y2) => {
+      const hF = 30;
+      const distPlan = Math.hypot(x2 - x1, y2 - y1) * S;
+      const n = Math.max(1, Math.round(distPlan / 34));
+      for (let i = 0; i < n; i++) {
+        const t0 = i / n, t1 = (i + 1) / n;
+        const px0 = x1 + (x2 - x1) * t0, py0 = y1 + (y2 - y1) * t0;
+        const px1 = x1 + (x2 - x1) * t1, py1 = y1 + (y2 - y1) * t1;
+        if (inBuilding((px0 + px1) / 2, (py0 + py1) / 2, 4)) continue;
+        const A = proj(px0 * S, py0 * S), B = proj(px1 * S, py1 * S);
+        const At = [A[0], A[1] - hF], Bt = [B[0], B[1] - hF];
+        solids.push({
+          isBuilding:false, isTree:false, isFence:true,
+          topRail:`${pt(At)} ${pt(Bt)}`,
+          midRail:`${pt([At[0],At[1]+hF*0.5])} ${pt([Bt[0],Bt[1]+hF*0.5])}`,
+          posts:[
+            { x1:A[0], y1:A[1], x2:At[0], y2:At[1] },
+            { x1:B[0], y1:B[1], x2:Bt[0], y2:Bt[1] }
+          ],
+          stroke:'#6d786c', cursor:'default',
+          depth:(px0 + px1) / 2 + (py0 + py1) / 2
+        });
+      }
+    };
+
+    const flats = [];
+    const addFlat = (x, y, w, h, fill, stroke, label, fs, opt) => {
+      opt = opt || {};
+      const X = x * S, Y = y * S;
+      const a = proj(X, Y), b = proj(X + w, Y), c = proj(X + w, Y + h), d = proj(X, Y + h);
+      const cx = (a[0]+b[0]+c[0]+d[0])/4, cy = (a[1]+b[1]+c[1]+d[1])/4;
+      flats.push({
+        points:`${pt(a)} ${pt(b)} ${pt(c)} ${pt(d)}`, fill, stroke:stroke||'none',
+        label:(showLabels && label)?label:'', lx:cx, ly:cy,
+        fs:fs||0, italic:opt.italic?'italic':'normal',
+        family:opt.serif?"Georgia, 'Times New Roman', serif":"'Helvetica Neue',Arial,sans-serif",
+        weight:opt.weight||600, color:opt.color||'#41504a'
+      });
+    };
+
+
+    // ---- top band ----
+    addBox(632, 15, 66, 58, 'booked');
+    addBox(700, 15, 60, 58, 'booked');
+    addBox(762, 15, 48, 58, 'corner');
+    addBox(812, 15, 150, 50, 'premium');
+
+    // ---- band 2 ----
+    [85,142,199,256,313].forEach(x => addBox(x, 95, 53, 45, 'available'));
+    addBox(380, 95, 128, 55, 'booked');
+    addBox(510, 95, 120, 55, 'booked');
+    addBox(632, 85, 66, 40, 'booked');
+    addBox(945, 70, 63, 18, 'available');
+    addBox(945, 94, 63, 26, 'booked');
+    addBox(945, 126, 63, 34, 'booked');
+    addBox(945, 164, 63, 14, 'available');
+
+    // ---- band 3 ----
+    addBox(85, 185, 53, 48, 'available'); addBox(142, 185, 53, 48, 'available');
+    addBox(256, 185, 120, 48, 'booked');
+    addBox(380, 185, 58, 48, 'available'); addBox(442, 185, 58, 48, 'available');
+    addBox(510, 185, 58, 48, 'booked');
+    addBox(570, 185, 58, 48, 'booked');
+    addBox(632, 185, 66, 48, 'premium');
+    addBox(805, 185, 68, 48, 'booked');
+    addBox(875, 185, 68, 48, 'corner');
+    addBox(945, 185, 63, 48, 'available');
+
+    // ---- band 4 ----
+    addBox(5, 250, 78, 52, 'corner');
+    addBox(85, 250, 53, 52, 'available');
+    addBox(140, 250, 68, 52, 'booked');
+    addBox(256, 250, 170, 52, 'premium');
+    addBox(430, 250, 78, 52, 'booked');
+    addBox(510, 250, 58, 52, 'booked');
+    addBox(570, 250, 58, 52, 'booked');
+    addBox(632, 250, 66, 52, 'booked');
+    addBox(805, 250, 68, 52, 'booked');
+    addBox(875, 250, 68, 52, 'booked');
+    addBox(945, 250, 63, 52, 'corner');
+    addBox(1058, 250, 62, 52, 'booked');
+
+    // ---- band 5 (two sub-rows) ----
+    addBox(256, 335, 58, 44, 'booked');
+    addBox(315, 335, 54, 44, 'available');
+    addBox(380, 335, 62, 44, 'premium');
+    addBox(444, 335, 62, 44, 'booked');
+    addBox(508, 335, 62, 44, 'booked');
+    addBox(572, 335, 62, 44, 'booked');
+    addBox(636, 335, 62, 44, 'corner');
+    addBox(805, 335, 68, 44, 'booked');
+    addBox(875, 335, 68, 44, 'available');
+    addBox(945, 335, 63, 44, 'booked');
+    addBox(1012, 360, 63, 48, 'corner');
+
+    addBox(256, 385, 58, 42, 'booked');
+    addBox(315, 385, 54, 42, 'available');
+    addBox(380, 385, 62, 42, 'booked');
+    addBox(444, 385, 62, 42, 'booked');
+    addBox(508, 385, 62, 42, 'booked');
+    addBox(572, 385, 62, 42, 'premium');
+    addBox(636, 385, 62, 42, 'premium');
+    addBox(805, 385, 68, 42, 'booked');
+    addBox(875, 385, 68, 42, 'available');
+    addBox(945, 385, 63, 42, 'corner');
+
+    // ---- band 6 ----
+    addBox(5, 455, 78, 60, 'corner');
+    addBox(256, 455, 58, 60, 'booked');
+    addBox(315, 455, 54, 60, 'available');
+    addBox(380, 455, 62, 60, 'booked');
+    addBox(444, 455, 62, 60, 'booked');
+    addBox(508, 455, 62, 60, 'booked');
+    addBox(572, 455, 126, 60, 'premium');
+    addBox(805, 455, 68, 60, 'premium');
+    addBox(875, 455, 68, 60, 'booked');
+    addBox(945, 455, 63, 60, 'booked');
+    addBox(1010, 455, 46, 60, 'corner');
+    addBox(1120, 435, 60, 45, 'corner');
+    addBox(1120, 485, 60, 35, 'available');
+
+    // ---- band 7 ----
+    addBox(1120, 525, 70, 34, 'booked');
+    addBox(1120, 560, 70, 30, 'booked');
+    addBox(1120, 592, 70, 32, 'booked');
+
+    // ---- fences ----
+    addFence(85, 83, 630, 83);
+    addFence(85, 245, 205, 245);
+    addFence(256, 245, 698, 245);
+    addFence(805, 245, 1120, 245);
+    addFence(1015, 15, 1015, 175);
+
+    // ---- labeled marker pads (like the parking lot) ----
+    addFlat(85, 15, 545, 58, '#c6cbc4', '#b3b8b1', '', 0, {});
+    addFlat(150, 575, 905, 55, '#c6cbc4', '#b3b8b1', '', 0, {});
+    // keep roads clear of the two pads (extra gap around them)
+    const padGap = 26;
+    buildingsFoot.push({ x: 85 - padGap, y: 15 - padGap, w: 545 + padGap*2, h: 58 + padGap*2 });
+    buildingsFoot.push({ x: 150 - padGap, y: 575 - padGap, w: 905 + padGap*2, h: 55 + padGap*2 });
+
+    // ---- roads: tiled so they stop at buildings (no road under a stall) ----
+    const roads = [];
+    const addRoad = (x, y, w, h) => {
+      const T = 20;
+      const nx = Math.max(1, Math.round(w / T)), ny = Math.max(1, Math.round(h / T));
+      const cw = w / nx, ch = h / ny, ov = 0.7;
+      for (let i = 0; i < nx; i++) for (let j = 0; j < ny; j++) {
+        const rx = x + i * cw, ry = y + j * ch;
+        const ccx = rx + cw / 2, ccy = ry + ch / 2;
+        if (ccy > 632) continue;
+        if (inBuilding(ccx, ccy, 6)) continue;
+        const a = proj((rx-ov)*S,(ry-ov)*S), b = proj((rx+cw+ov)*S,(ry-ov)*S), c = proj((rx+cw+ov)*S,(ry+ch+ov)*S), d = proj((rx-ov)*S,(ry+ch+ov)*S);
+        roads.push(`${pt(a)} ${pt(b)} ${pt(c)} ${pt(d)}`);
+      }
+    };
+    addRoad(-14, -14, 30, 672);
+    addRoad(214, -14, 34, 672);
+    addRoad(700, -14, 95, 672);
+    addRoad(1018, -14, 28, 672);
+    addRoad(-14, 150, 1220, 30);
+    addRoad(-14, 300, 1220, 26);
+    addRoad(-14, 425, 1220, 30);
+    addRoad(-14, 512, 1220, 26);
+
+    solids.sort((m, n) => m.depth - n.depth);
+
+    const labelAt = (x, y, w, h, text) => {
+      const c = proj((x + w/2) * S, (y + h/2) * S);
+      return { lx:c[0], ly:c[1], text };
+    };
+    const labels = [
+      labelAt(85, 15, 545, 58, 'HOUSE'),
+      labelAt(150, 535, 905, 55, 'Church Building')
+    ];
+
+    const camera = `translate(${this.state.tx} ${this.state.ty}) scale(${this.state.k})`;
+    return {
+      bg, flats, roads, solids, labels, camera,
+      onDown: this.onDown, onMove: this.onMove, onUp: this.onUp, onWheel: this.onWheel,
+      zoomIn: this.zoomIn, zoomOut: this.zoomOut, resetView: this.resetView
+    };
+  }
+}
+</script>
+</body>
+</html>

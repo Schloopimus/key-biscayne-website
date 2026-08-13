@@ -3125,22 +3125,25 @@
 
 
   .stall-legend {
-    color: #5c7267;
-    font-size: 0.72rem;
+    display: flex;
+    color: #3b4954;
+    align-items: center;
+    gap: 1.6rem;
+    font-size: 0.78rem;
   }
 
   .stall-legend span {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.5rem;
   }
 
   .stall-legend i {
-    width: 0.85rem;
-    height: 0.85rem;
+    width: 1rem;
+    height: 1rem;
     background: #fff;
-    border: 1px solid #466d5a;
-    border-radius: 0.2rem;
+    border: 1.5px solid #466d5a;
+    border-radius: 0.25rem;
   }
 
   .stall-legend .is-corner {
@@ -3455,8 +3458,20 @@
   }
 
 
-  .stall-map-screen > .portal-page-heading {
-    margin-inline: 5.75rem;
+  .stall-map-header {
+    display: flex;
+    padding-inline: 5.75rem;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .stall-map-header .portal-page-heading {
+    margin-bottom: 1.8rem;
+  }
+
+  .stall-map-header .stall-legend {
+    padding-bottom: 2.15rem;
   }
   .admin-list-heading .button {
     color: #fff;
@@ -3600,113 +3615,127 @@
 
   .plaza-layout {
     display: grid;
-    min-height: 45.25rem;
-    grid-template-columns: minmax(0, 1fr) 21.25rem;
+    min-height: 45.75rem;
+    border-top: 1px solid #e8ebe8;
+    grid-template-columns: minmax(0, 1fr) 21.625rem;
   }
 
   .plaza-map {
-    display: grid;
     position: relative;
-    padding: 4rem 5.75rem 12rem;
+    min-width: 0;
+    min-height: 45.75rem;
     overflow: hidden;
-    background: #7c9c8a;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    align-content: start;
-    gap: 1.25rem;
+    background: #869c82;
   }
 
-  .plaza-map::after {
+  .plaza-map__svg {
     position: absolute;
-    right: 12%;
-    bottom: 3.5rem;
-    width: 56%;
-    height: 7rem;
-    background: #d6d8d6;
-    content: '';
-    transform: skewY(-10deg);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+    touch-action: none;
   }
 
-  .plaza-map__parking {
-    position: absolute;
-    z-index: 1;
-    right: 33%;
-    bottom: 6.8rem;
-    color: #123021;
-    font-family: 'Cormorant Garamond', serif;
-    font-style: italic;
-    transform: rotate(-10deg);
+  .plaza-map__svg.is-dragging {
+    cursor: grabbing;
   }
 
-  .plaza-stall {
-    display: grid;
-    position: relative;
-    z-index: 2;
-    min-height: 7rem;
-    padding: 0.9rem;
-    color: #123021;
-    background: #fff;
-    border: 2px solid #466d5a;
-    border-radius: 0.35rem;
-    align-content: start;
-    text-align: left;
-    gap: 0.25rem;
+  .plaza-map__stall {
+    cursor: pointer;
+    outline: none;
+    transition: filter 150ms ease, transform 150ms ease;
+    transform-box: fill-box;
+    transform-origin: center;
   }
 
-  .plaza-stall--corner {
-    border-color: #4aa3d3;
-  }
-
-  .plaza-stall--premium {
-    border-color: #e2a012;
-  }
-
-  .plaza-stall.is-booked {
-    background: #c7cdc6;
-    border-color: #8e9a91;
+  .plaza-map__stall[aria-disabled='true'] {
     cursor: not-allowed;
   }
 
-  .plaza-stall[aria-pressed='true'] {
-    color: #fff;
-    background: #123021;
+  .plaza-map__stall:not([aria-disabled='true']):hover {
+    filter: brightness(1.05);
+    transform: translateY(-14px);
   }
 
-  .plaza-stall strong {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.65rem;
+  .plaza-map__stall:focus-visible polygon {
+    filter: drop-shadow(0 0 0.35rem rgb(245 197 24 / 90%));
+    stroke: var(--gold);
+    stroke-width: 7;
   }
 
-  .plaza-stall span {
-    font-size: 0.68rem;
+  .plaza-map__parking-label {
+    fill: #4a544e;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 38px;
+    font-style: italic;
+    letter-spacing: 1px;
+    paint-order: stroke;
+    stroke: #e9ebe3;
+    stroke-width: 3px;
+  }
+
+  .plaza-map__zoom {
+    display: flex;
+    position: absolute;
+    z-index: 3;
+    right: 1.1rem;
+    bottom: 1.1rem;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .plaza-map__zoom button {
+    display: grid;
+    width: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0.25rem;
+    color: #2b3f52;
+    background: rgb(255 255 255 / 95%);
+    border: 1px solid rgb(60 75 68 / 16%);
+    border-radius: 0.625rem;
+    box-shadow: 0 0.2rem 0.65rem rgb(40 55 45 / 16%);
+    place-items: center;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
+  .plaza-map__zoom button:last-child {
+    font-size: 0.62rem;
+    font-weight: 700;
+  }
+
+  .map-mobile-controls {
+    display: none;
   }
 
   .stall-detail-panel {
-    min-height: 45.25rem;
+    min-height: 45.75rem;
     justify-content: stretch;
   }
 
-  .stall-detail-panel dl {
-    display: grid;
-    gap: 0.75rem;
+  .stall-detail-panel h2 {
+    margin-top: 0.45rem;
+    font-size: 2.35rem;
+    line-height: 1;
+    text-transform: capitalize;
   }
 
-  .stall-detail-panel dl div {
+  .stall-detail-panel__price {
     display: flex;
-    padding-top: 0.75rem;
-    border-top: 1px solid #e1e5e2;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  .stall-detail-panel dt {
-    color: #829486;
-    font-size: 0.72rem;
-    text-transform: uppercase;
-  }
-
-  .stall-detail-panel dd {
     margin: 0;
-    color: #123021;
+    align-items: baseline;
+    gap: 0.45rem;
+  }
+
+  .stall-detail-panel > p:not(.portal-label, .stall-detail-panel__price) {
+    margin: 0;
+  }
+
+  .stall-detail-panel .button {
+    margin-top: 0.25rem;
   }
 
   .stall-detail-panel__prompt {
@@ -3720,6 +3749,7 @@
 
   .stall-detail-panel .portal-back-link {
     margin-top: auto;
+    text-align: center;
   }
 
   .checkout-layout {
@@ -3793,12 +3823,8 @@
     }
 
     .map-toolbar,
-    .plaza-map {
+    .stall-map-header {
       padding-inline: 2rem;
-    }
-
-    .stall-map-screen > .portal-page-heading {
-      margin-inline: 2rem;
     }
   }
 
@@ -3814,7 +3840,7 @@
 
     .portal-main--map {
       width: 100%;
-      padding-top: calc(var(--header-h) + 2rem);
+      padding-top: var(--header-h);
     }
 
     .portal-page-heading {
@@ -3835,11 +3861,9 @@
       grid-template-columns: 1fr;
     }
 
-
-    .stall-detail-panel {
-      min-height: 18rem;
-      border-top: 1px solid #e1e5e2;
-      border-left: 0;
+    .stall-map-header,
+    .map-toolbar {
+      display: none;
     }
 
     .portal-table__header {
@@ -3865,22 +3889,102 @@
       text-transform: uppercase;
     }
 
-    .map-toolbar,
-    .checkout-layout,
-    .plaza-layout {
+    .checkout-layout {
       grid-template-columns: 1fr;
     }
 
-    .map-toolbar__booking {
-      justify-items: start;
+    .plaza-layout {
+      display: block;
+      min-height: 0;
     }
 
     .plaza-map {
-      min-height: 38rem;
+      height: 32.75rem;
+      min-height: 0;
+      transition: height 220ms ease;
+    }
+
+    .plaza-layout.has-selection .plaza-map {
+      height: 20.25rem;
+    }
+
+    .plaza-map__svg {
+      inset: 0 auto 0 50%;
+      width: auto;
+      max-width: none;
+      height: 100%;
+      transform: translateX(-50%);
+    }
+
+    .plaza-map__zoom {
+      display: none;
+    }
+
+    .map-mobile-controls {
+      display: grid;
+      position: absolute;
+      z-index: 3;
+      top: 0.75rem;
+      right: 0.75rem;
+      left: 0.75rem;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+      gap: 0.55rem;
+    }
+
+    .map-mobile-controls label {
+      display: flex;
+      min-width: 0;
+      min-height: 2.35rem;
+      padding-left: 0.8rem;
+      color: var(--green);
+      background: rgb(250 255 251 / 92%);
+      border-radius: 999px;
+      align-items: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .map-mobile-controls select {
+      min-width: 0;
+      height: 100%;
+      padding: 0 1.7rem 0 0.3rem;
+      color: #25573c;
+      background-color: transparent;
+      border: 0;
+      outline-offset: -0.2rem;
+      font: inherit;
+    }
+
+    .map-mobile-controls select:disabled {
+      opacity: 1;
     }
 
     .stall-detail-panel {
       min-height: 18rem;
+      padding: 2rem 1.75rem 2.5rem;
+      border-top: 1px solid #e1e5e2;
+      border-left: 0;
+    }
+
+    .stall-detail-panel.is-selected {
+      min-height: 29rem;
+    }
+
+    .stall-detail-panel h2 {
+      font-size: 2.45rem;
+    }
+
+    .stall-detail-panel__price {
+      font-size: 2.35rem;
+    }
+
+    .stall-detail-panel__price small {
+      font-size: 1.25rem;
+    }
+
+    .stall-detail-panel .portal-back-link {
+      margin-top: 1.2rem;
     }
 
     .admin-review-row,
@@ -3954,37 +4058,18 @@
     }
 
 
-    .stall-legend {
+    .choice-pills {
       overflow-x: auto;
       flex-wrap: nowrap;
     }
 
-    .stall-legend span {
-      flex: 0 0 auto;
-    }
-
-    .choice-pills,
-    .stall-legend {
-      overflow-x: auto;
-      flex-wrap: nowrap;
-    }
-
-    .choice-pills button,
-    .stall-legend span {
+    .choice-pills button {
       flex: 0 0 auto;
     }
 
     .map-toolbar,
-    .plaza-map {
+    .stall-map-header {
       padding-inline: 1rem;
-    }
-
-    .stall-map-screen > .portal-page-heading {
-      margin-inline: 1rem;
-    }
-
-    .plaza-map {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .admin-list-heading,

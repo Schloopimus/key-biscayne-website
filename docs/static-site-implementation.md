@@ -1,6 +1,6 @@
 # Static Site Implementation
 
-Status: working public site and local operations demo as of 2026-08-11.
+Status: working public site and local operations demo as of 2026-08-13.
 
 This document describes the implemented public website and the boundaries of the local Farmers Market demo. Product scope and production architecture remain documented in [`entire-website-analysis.md`](./entire-website-analysis.md).
 
@@ -25,7 +25,7 @@ The repository also contains a deliberately local-only Farmers Market operations
 - Vendor application and immutable revision status
 - Local health-certificate upload and download
 - Admin application review, vendor directory, market dates, stall inventory, booking records, and payment status
-- Responsive two-dimensional stall selection, reservation, payment-state handoff, change, and cancellation
+- Responsive three-dimensional plaza map with stall selection, reservation, payment-state handoff, change, and cancellation
 - Vendor and admin layouts matching the supplied Farmers Market Figma at desktop, adapted for keyboard and mobile use
 
 It deliberately does **not** include Better Auth, production accounts, outbound email, Stripe payments, private R2 storage, Turnstile, or deployment configuration. Local signup/login stores only the vendor profile and never stores or checks the entered password. Every portal page labels those boundaries; no action pretends an external service is connected.
@@ -416,7 +416,7 @@ The Figma-derived Farmers Market UI and local workflow were additionally exercis
 - The per-date admin booking table showed the confirmed payment status and persisted vendor phone data.
 - A new premium market slot with an $80 price was created through the Figma-derived form.
 - Vendor signup, dashboard, application, map, payment, admin dashboard, vendor table, date management, booking table, and new-slot screens were reviewed at 1440 × 1024.
-- The same route set had no horizontal overflow at 390 × 844; the stall map retained its scrollable controls and accessible two-dimensional selection.
+- The same route set had no horizontal overflow at 390 × 844; the plaza map retained its date controls, pan interaction, and accessible stall selection.
 - Keyboard focus displayed a 3px visible outline with a 4px offset.
 - `bun run check` and `bun run build` passed.
 
@@ -442,4 +442,4 @@ Avoid prompts such as “make it modern,” “redesign everything,” or “use
 
 The Figma-derived Farmers Market product now has a locally working data and workflow demo inside the existing TanStack Start application. The next boundary is production integration, not a second frontend or a redesign.
 
-Do not connect Better Auth, email, R2, Stripe, Turnstile, or deployment until the owner approves the relevant product rules. Month/quarter/year booking semantics, pricing policy, cancellation/refund rules, recipients, retention, and the final three-dimensional stall diagram remain unresolved in `entire-website-analysis.md`.
+Do not connect Better Auth, email, R2, Stripe, Turnstile, or deployment until the owner approves the relevant product rules. Month/quarter/year booking semantics, pricing policy, cancellation/refund rules, recipients, retention, and production stall-inventory ownership remain unresolved in `entire-website-analysis.md`.

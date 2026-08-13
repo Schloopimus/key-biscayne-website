@@ -29,6 +29,15 @@ function upcomingSaturdays(amount: number) {
 }
 
 function seedLocalMarket() {
+  const disconnectedMapDescription =
+    'A 10 × 10 demo stall. The final plaza diagram and geometry are not connected yet.'
+  const plazaStallDescription = 'A 10 × 10 market stall on the church plaza.'
+  database
+    .update(schema.stalls)
+    .set({ description: plazaStallDescription })
+    .where(eq(schema.stalls.description, disconnectedMapDescription))
+    .run()
+
   const existingEvents = database.select({ value: count() }).from(schema.marketEvents).get()?.value ?? 0
   if (existingEvents > 0) return
 
@@ -37,7 +46,7 @@ function seedLocalMarket() {
   const stallRows = stallCodes.map((code) => ({
     id: `stall-${code.toLowerCase()}`,
     code,
-    description: 'A 10 × 10 demo stall. The final plaza diagram and geometry are not connected yet.',
+    description: plazaStallDescription,
     active: true,
   }))
 

@@ -8,6 +8,7 @@ import {
   formatMoney,
   useLocalVendorId,
 } from '../components/MarketPortal'
+import { PlazaMap } from '../components/PlazaMap'
 import {
   changeLocalBooking,
   createLocalBooking,
@@ -93,10 +94,18 @@ function StallSelectionPage() {
 
   return (
     <section className="stall-map-screen">
-      <PortalPageHeading
-        eyebrow={changingBooking ? 'Change your spot' : 'Pick your spot'}
-        title={changingBooking ? `Move stall ${changingBooking.stallCode}` : 'Plaza Map'}
-      />
+      <div className="stall-map-header">
+        <PortalPageHeading
+          eyebrow={changingBooking ? 'Change your spot' : 'Pick your spot'}
+          title={changingBooking ? `Move stall ${changingBooking.stallCode}` : 'Plaza Map'}
+        />
+        <div className="stall-legend" aria-label="Stall legend">
+          <span><i className="is-standard" />Standard</span>
+          <span><i className="is-corner" />Corner</span>
+          <span><i className="is-premium" />Premium</span>
+          <span><i className="is-booked" />Booked</span>
+        </div>
+      </div>
       {error ? <PortalError message={error} /> : null}
 
       {events.length === 0 ? (
@@ -128,12 +137,6 @@ function StallSelectionPage() {
               </div>
             </div>
             <div className="map-toolbar__booking">
-              <div className="stall-legend" aria-label="Stall legend">
-                <span><i className="is-standard" />Standard</span>
-                <span><i className="is-corner" />Corner</span>
-                <span><i className="is-premium" />Premium</span>
-                <span><i className="is-booked" />Booked</span>
-              </div>
               <p className="portal-label">Booking length</p>
               <div className="choice-pills choice-pills--length">
                 <button type="button" className="is-active">Single Date</button>
@@ -144,43 +147,56 @@ function StallSelectionPage() {
             </div>
           </div>
 
-          <div className="plaza-layout">
-            <div className="plaza-map" aria-label="Accessible two-dimensional plaza stall map">
-              <span className="plaza-map__parking">Parking Area</span>
-              {selectedEvent?.stalls.map((stall) => {
-                const isCurrent = changingBooking?.eventStallId === stall.eventStallId
-                const isBooked = Boolean(stall.bookingId) && !isCurrent
-                return (
-                  <button
-                    key={stall.eventStallId}
-                    className={`plaza-stall plaza-stall--${stall.tier}${isBooked ? ' is-booked' : ''}`}
-                    type="button"
-                    disabled={isBooked}
-                    aria-pressed={selectedStallId === stall.eventStallId}
-                    aria-label={`Stall ${stall.stallCode}, ${stall.tier}, ${formatMoney(stall.priceCents)}, ${isCurrent ? 'your current stall' : isBooked ? 'booked' : 'available'}`}
-                    onClick={() => setSelectedStallId(stall.eventStallId)}
+          <div className={`plaza-layout${selectedStall ? ' has-selection' : ''}`}>
+            <div className="plaza-map">
+              <div className="map-mobile-controls">
+                <label>
+                  <span>Date:</span>
+                  <select
+                    aria-label="Market date"
+                    value={selectedEventId}
+                    disabled={Boolean(changingBooking)}
+                    onChange={(event) => {
+                      setSelectedEventId(event.currentTarget.value)
+                      setSelectedStallId('')
+                    }}
                   >
-                    <strong>{stall.stallCode}</strong>
-                    <span>{isBooked ? 'Booked' : formatMoney(stall.priceCents)}</span>
-                  </button>
-                )
-              })}
+                    {events.map((event) => (
+                      <option key={event.id} value={event.id}>
+                        {formatMarketDate(event.marketDate, false)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Duration:</span>
+                  <select aria-label="Booking length; only Single Date is available" disabled>
+                    <option>Single Date</option>
+                  </select>
+                </label>
+              </div>
+              <PlazaMap
+                stalls={selectedEvent?.stalls ?? []}
+                selectedStallId={selectedStallId}
+                currentEventStallId={changingBooking?.eventStallId}
+                onSelect={setSelectedStallId}
+              />
             </div>
 
-            <aside className="stall-detail-panel">
+            <aside className={`stall-detail-panel${selectedStall ? ' is-selected' : ''}`}>
               {selectedStall ? (
                 <>
                   <div>
                     <p className="portal-label">Stall {selectedStall.stallCode}</p>
                     <h2>{selectedStall.tier} stall</h2>
-                    <p>{selectedStall.description}</p>
                   </div>
-                  <dl>
-                    <div><dt>Market date</dt><dd>{selectedEvent ? formatMarketDate(selectedEvent.marketDate) : '—'}</dd></div>
-                    <div><dt>Stall price</dt><dd>{formatMoney(selectedStall.priceCents)}</dd></div>
-                  </dl>
+                  <p className="stall-detail-panel__price">
+                    {formatMoney(selectedStall.priceCents)}
+                    <small>/ Saturday</small>
+                  </p>
+                  <p>{selectedStall.description}</p>
                   <button className="button button--market-dark" type="button" onClick={reserve} disabled={status === 'saving'}>
-                    {status === 'saving' ? 'Reserving…' : changingBooking ? 'Change stall →' : 'Reserve stall →'}
+                    {status === 'saving' ? 'Reserving…' : changingBooking ? 'Change this stall' : 'Reserve this stall'}
                   </button>
                 </>
               ) : (
