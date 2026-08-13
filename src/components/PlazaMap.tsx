@@ -16,215 +16,189 @@ type PlazaMapProps = {
 }
 
 type Camera = { x: number; y: number; scale: number }
-type Point = readonly [number, number]
-type BoxKind = PlazaMapStall['tier'] | 'available' | 'booked'
-type MapBox = {
-  code: string
-  sourceKind: BoxKind
-  top: string
-  right: string
-  left: string
-  depth: number
+type StallTier = PlazaMapStall['tier']
+type FaceSet = { front: string; top: string; right: string }
+type MapStall = FaceSet & {
+  code: string | null
+  sourceTier: StallTier | 'booked'
+  shadow: string
 }
 
-const viewBox = { x: 120, y: 40, width: 3120, height: 1720 }
+const viewBox = { x: 0, y: 300, width: 1098, height: 819 }
 const initialCamera: Camera = { x: 0, y: 0, scale: 1 }
 
 const palettes = {
-  standard: { top: '#fbfcf9', right: '#dfe3db', left: '#edefe8', stroke: '#466d5a', width: 2.5 },
-  corner: { top: '#fbfcf9', right: '#dfe3db', left: '#edefe8', stroke: '#4a8fce', width: 3 },
-  premium: { top: '#fbfcf9', right: '#dfe3db', left: '#edefe8', stroke: '#dda43a', width: 3 },
-  booked: { top: '#c8ccc4', right: '#a7aca3', left: '#babeb6', stroke: '#92998f', width: 1.5 },
-  selected: { top: '#2f7d4f', right: '#1f5a38', left: '#276a44', stroke: '#17512f', width: 2.5 },
+  standard: { front: 'url(#stall-front)', top: 'url(#stall-top)', right: 'url(#stall-right)', stroke: '#4c6d5a', width: 3 },
+  corner: { front: 'url(#stall-front)', top: 'url(#stall-top)', right: 'url(#stall-right)', stroke: '#4a90d9', width: 3 },
+  premium: { front: 'url(#stall-front)', top: 'url(#stall-top)', right: 'url(#stall-right)', stroke: '#e2a012', width: 3 },
+  booked: { front: '#c7cdc6', top: '#c7cdc6', right: '#c7cdc6', stroke: '#8b908b', width: 2 },
+  selected: { front: '#2f7a56', top: '#2f7a56', right: '#254f38', stroke: '#123021', width: 3 },
 } as const
 
-function buildScene() {
-  const offsetX = 1240
-  const offsetY = 190
-  const scale = 1.6
-  const height = 96
-  const boxes: Array<MapBox> = []
-  const footprints: Array<{ x: number; y: number; width: number; height: number }> = []
-  const zoneCounts: Record<string, number> = {}
+const backRoads = [
+  '320,628 616,452 635,463 338,639',
+  '629.5,643 220,406 239,396 648.5,632.5',
+]
 
-  const project = (x: number, y: number): Point => [(x - y) + offsetX, (x + y) * 0.5 + offsetY]
-  const point = ([x, y]: Point) => `${x.toFixed(1)},${y.toFixed(1)}`
-  const zoneFor = (centerX: number) =>
-    centerX < 240 ? 'A' : centerX < 480 ? 'B' : centerX < 720 ? 'C' : centerX < 980 ? 'D' : 'E'
+const middleRoads = [
+  '485,1181 759,1016 778,1027 504,1192',
+  '756,1018 1030,853 1049,864 775,1029',
+  '1031,875 621,638 640,628 1050,864',
+  '463.5,722 56,486 75,476 484.5,712.5',
+]
 
-  const addBox = (x: number, y: number, width: number, depth: number, sourceKind: BoxKind) => {
-    footprints.push({ x, y, width, height: depth })
-    const leftBack = project(x * scale, y * scale)
-    const rightBack = project((x + width) * scale, y * scale)
-    const rightFront = project((x + width) * scale, (y + depth) * scale)
-    const leftFront = project(x * scale, (y + depth) * scale)
-    const lift = ([px, py]: Point): Point => [px, py - height]
-    const topLeftBack = lift(leftBack)
-    const topRightBack = lift(rightBack)
-    const topRightFront = lift(rightFront)
-    const topLeftFront = lift(leftFront)
-    const zone = zoneFor(x + width / 2)
-    zoneCounts[zone] = (zoneCounts[zone] ?? 0) + 1
+const parkingArea = '293.5,818 539.5,702 904.5,909.5 672,1043'
 
-    boxes.push({
-      code: `${zone}${zoneCounts[zone]}`,
-      sourceKind,
-      top: `${point(topLeftBack)} ${point(topRightBack)} ${point(topRightFront)} ${point(topLeftFront)}`,
-      right: `${point(rightBack)} ${point(rightFront)} ${point(topRightFront)} ${point(topRightBack)}`,
-      left: `${point(leftFront)} ${point(rightFront)} ${point(topRightFront)} ${point(topLeftFront)}`,
-      depth: x + width / 2 + y + depth / 2,
-    })
-  }
+const mapStalls: Array<MapStall> = [
+  {
+    code: 'A1', sourceTier: 'standard',
+    front: '103,365.5 171,403.5 171,517.5 103,479.5',
+    top: '103,365.5 147,339 215,378 171,403.5',
+    right: '171,403.5 215,378 215,492.5 171,517.5',
+    shadow: '171,517.5 215,492.5 215,458 272.5,486 211,519.5',
+  },
+  {
+    code: 'A2', sourceTier: 'standard',
+    front: '256,278.5 324,316.5 324,430.5 256,392.5',
+    top: '256,278.5 300,252 368,291 324,316.5',
+    right: '324,316.5 368,291 368,405.5 324,430.5',
+    shadow: '324,430.5 368,405.5 368,371 425.5,399 364,432.5',
+  },
+  {
+    code: 'A3', sourceTier: 'standard',
+    front: '188,411.5 256,449.5 256,563.5 188,525.5',
+    top: '188,411.5 232,385 300,424 256,449.5',
+    right: '256,449.5 300,424 300,538.5 256,563.5',
+    shadow: '256,563.5 300,538.5 300,504 357.5,532 296,565.5',
+  },
+  {
+    code: 'A4', sourceTier: 'standard',
+    front: '341,324.5 409,362.5 409,476.5 341,438.5',
+    top: '341,324.5 385,298 453,337 409,362.5',
+    right: '409,362.5 453,337 453,451.5 409,476.5',
+    shadow: '409,476.5 453,451.5 453,417 510.5,445 449,478.5',
+  },
+  {
+    code: 'B1', sourceTier: 'premium',
+    front: '280,465 324,490 324,605 280,580',
+    top: '280,465 366,415 408.5,441.5 324,490',
+    right: '324,490 408.5,441.5 408.5,555.5 324,605',
+    shadow: '324,605 408.5,555.5 408.5,521.5 466,549.285 370.5,605',
+  },
+  {
+    code: null, sourceTier: 'booked',
+    front: '431,374 475,399 475,514 431,489',
+    top: '431,374 517,324 559.5,350.5 475,399',
+    right: '475,399 559.5,350.5 559.5,464.5 475,514',
+    shadow: '475,514 559.5,464.5 559.5,430.5 617,458.285 521.5,514',
+  },
+  {
+    code: 'B2', sourceTier: 'premium',
+    front: '392,534 436,559 436,674 392,649',
+    top: '392,534 478,484 520.5,510.5 436,559',
+    right: '436,559 520.5,510.5 520.5,624.5 436,674',
+    shadow: '436,674 520.5,624.5 520.5,590.5 578,618.285 482.5,674',
+  },
+  {
+    code: 'B3', sourceTier: 'premium',
+    front: '553,443 597,468 597,583 553,558',
+    top: '553,443 639,393 681.5,419.5 597,468',
+    right: '597,468 681.5,419.5 681.5,533.5 597,583',
+    shadow: '597,583 681.5,533.5 681.5,499.5 739,527.285 643.5,583',
+  },
+  {
+    code: null, sourceTier: 'booked',
+    front: '628,492.5 696,530.5 696,644.5 628,606.5',
+    top: '628,492.5 672,466 740,505 696,530.5',
+    right: '696,530.5 740,505 740,619.5 696,644.5',
+    shadow: '696,644.5 740,619.5 740,585 797.5,613 736,646.5',
+  },
+  {
+    code: null, sourceTier: 'booked',
+    front: '709,539.5 777,577.5 777,691.5 709,653.5',
+    top: '709,539.5 753,513 821,552 777,577.5',
+    right: '777,577.5 821,552 821,666.5 777,691.5',
+    shadow: '777,691.5 821,666.5 821,632 878.5,660 817,693.5',
+  },
+  {
+    code: 'C1', sourceTier: 'standard',
+    front: '794,586.5 862,624.5 862,738.5 794,700.5',
+    top: '794,586.5 838,560 906,599 862,624.5',
+    right: '862,624.5 906,599 906,713.5 862,738.5',
+    shadow: '862,738.5 906,713.5 906,679 963.5,707 902,740.5',
+  },
+  {
+    code: 'C2', sourceTier: 'standard',
+    front: '879,637.5 947,675.5 947,789.5 879,751.5',
+    top: '879,637.5 923,611 991,650 947,675.5',
+    right: '947,675.5 991,650 991,764.5 947,789.5',
+    shadow: '947,789.5 991,764.5 991,730 1048.5,758 987,791.5',
+  },
+  {
+    code: null, sourceTier: 'booked',
+    front: '56,460.5 124,498.5 124,612.5 56,574.5',
+    top: '56,460.5 100,434 168,473 124,498.5',
+    right: '124,498.5 168,473 168,587.5 124,612.5',
+    shadow: '124,612.5 168,587.5 168,553 225.5,581 164,614.5',
+  },
+  {
+    code: 'C3', sourceTier: 'corner',
+    front: '150,511.5 218,549.5 218,663.5 150,625.5',
+    top: '150,511.5 194,485 262,524 218,549.5',
+    right: '218,549.5 262,524 262,638.5 218,663.5',
+    shadow: '218,663.5 262,638.5 262,604 319.5,632 258,665.5',
+  },
+  {
+    code: 'C4', sourceTier: 'corner',
+    front: '964,688.5 1032,726.5 1032,840.5 964,802.5',
+    top: '964,688.5 1008,662 1076,701 1032,726.5',
+    right: '1032,726.5 1076,701 1076,815.5 1032,840.5',
+    shadow: '1032,840.5 1076,815.5 1076,781 1133.5,809 1072,842.5',
+  },
+  {
+    code: 'D1', sourceTier: 'premium',
+    front: '251,614 295,639 295,754 251,729',
+    top: '251,614 337,564 379.5,590.5 295,639',
+    right: '295,639 379.5,590.5 379.5,704.5 295,754',
+    shadow: '295,754 379.5,704.5 379.5,670.5 437,698.285 341.5,754',
+  },
+  {
+    code: 'D2', sourceTier: 'standard',
+    front: '492,545.5 560,583.5 560,697.5 492,659.5',
+    top: '492,545.5 536,519 604,558 560,583.5',
+    right: '560,583.5 604,558 604,672.5 560,697.5',
+    shadow: '560,697.5 604,672.5 604,638 661.5,666 600,699.5',
+  },
+  {
+    code: 'B4', sourceTier: 'standard',
+    front: '577,591.5 645,629.5 645,743.5 577,705.5',
+    top: '577,591.5 621,565 689,604 645,629.5',
+    right: '645,629.5 689,604 689,718.5 645,743.5',
+    shadow: '645,743.5 689,718.5 689,684 746.5,712 685,745.5',
+  },
+  {
+    code: null, sourceTier: 'booked',
+    front: '671,642.5 739,680.5 739,794.5 671,756.5',
+    top: '671,642.5 715,616 783,655 739,680.5',
+    right: '739,680.5 783,655 783,769.5 739,794.5',
+    shadow: '739,794.5 783,769.5 783,735 840.5,763 779,796.5',
+  },
+  {
+    code: 'D3', sourceTier: 'standard',
+    front: '761,695.5 829,733.5 829,847.5 761,809.5',
+    top: '761,695.5 805,669 873,708 829,733.5',
+    right: '829,733.5 873,708 873,822.5 829,847.5',
+    shadow: '829,847.5 873,822.5 873,788 930.5,816 869,849.5',
+  },
+  {
+    code: 'D4', sourceTier: 'corner',
+    front: '850,748.5 918,786.5 918,900.5 850,862.5',
+    top: '850,748.5 894,722 962,761 918,786.5',
+    right: '918,786.5 962,761 962,875.5 918,900.5',
+    shadow: '918,900.5 962,875.5 962,841 1019.5,869 958,902.5',
+  },
+]
 
-  addBox(632, 15, 66, 58, 'booked')
-  addBox(700, 15, 60, 58, 'booked')
-  addBox(762, 15, 48, 58, 'corner')
-  addBox(812, 15, 150, 50, 'premium')
-  ;[85, 142, 199, 256, 313].forEach((x) => addBox(x, 95, 53, 45, 'available'))
-  addBox(380, 95, 128, 55, 'booked')
-  addBox(510, 95, 120, 55, 'booked')
-  addBox(632, 85, 66, 40, 'booked')
-  addBox(945, 70, 63, 18, 'available')
-  addBox(945, 94, 63, 26, 'booked')
-  addBox(945, 126, 63, 34, 'booked')
-  addBox(945, 164, 63, 14, 'available')
-  addBox(85, 185, 53, 48, 'available')
-  addBox(142, 185, 53, 48, 'available')
-  addBox(256, 185, 120, 48, 'booked')
-  addBox(380, 185, 58, 48, 'available')
-  addBox(442, 185, 58, 48, 'available')
-  addBox(510, 185, 58, 48, 'booked')
-  addBox(570, 185, 58, 48, 'booked')
-  addBox(632, 185, 66, 48, 'premium')
-  addBox(805, 185, 68, 48, 'booked')
-  addBox(875, 185, 68, 48, 'corner')
-  addBox(945, 185, 63, 48, 'available')
-  addBox(5, 250, 78, 52, 'corner')
-  addBox(85, 250, 53, 52, 'available')
-  addBox(140, 250, 68, 52, 'booked')
-  addBox(256, 250, 170, 52, 'premium')
-  addBox(430, 250, 78, 52, 'booked')
-  addBox(510, 250, 58, 52, 'booked')
-  addBox(570, 250, 58, 52, 'booked')
-  addBox(632, 250, 66, 52, 'booked')
-  addBox(805, 250, 68, 52, 'booked')
-  addBox(875, 250, 68, 52, 'booked')
-  addBox(945, 250, 63, 52, 'corner')
-  addBox(1058, 250, 62, 52, 'booked')
-  addBox(256, 335, 58, 44, 'booked')
-  addBox(315, 335, 54, 44, 'available')
-  addBox(380, 335, 62, 44, 'premium')
-  addBox(444, 335, 62, 44, 'booked')
-  addBox(508, 335, 62, 44, 'booked')
-  addBox(572, 335, 62, 44, 'booked')
-  addBox(636, 335, 62, 44, 'corner')
-  addBox(805, 335, 68, 44, 'booked')
-  addBox(875, 335, 68, 44, 'available')
-  addBox(945, 335, 63, 44, 'booked')
-  addBox(1012, 360, 63, 48, 'corner')
-  addBox(256, 385, 58, 42, 'booked')
-  addBox(315, 385, 54, 42, 'available')
-  addBox(380, 385, 62, 42, 'booked')
-  addBox(444, 385, 62, 42, 'booked')
-  addBox(508, 385, 62, 42, 'booked')
-  addBox(572, 385, 62, 42, 'premium')
-  addBox(636, 385, 62, 42, 'premium')
-  addBox(805, 385, 68, 42, 'booked')
-  addBox(875, 385, 68, 42, 'available')
-  addBox(945, 385, 63, 42, 'corner')
-  addBox(5, 455, 78, 60, 'corner')
-  addBox(256, 455, 58, 60, 'booked')
-  addBox(315, 455, 54, 60, 'available')
-  addBox(380, 455, 62, 60, 'booked')
-  addBox(444, 455, 62, 60, 'booked')
-  addBox(508, 455, 62, 60, 'booked')
-  addBox(572, 455, 126, 60, 'premium')
-  addBox(805, 455, 68, 60, 'premium')
-  addBox(875, 455, 68, 60, 'booked')
-  addBox(945, 455, 63, 60, 'booked')
-  addBox(1010, 455, 46, 60, 'corner')
-  addBox(1120, 435, 60, 45, 'corner')
-  addBox(1120, 485, 60, 35, 'available')
-  addBox(1120, 525, 70, 34, 'booked')
-  addBox(1120, 560, 70, 30, 'booked')
-  addBox(1120, 592, 70, 32, 'booked')
-
-  const padPolygon = (x: number, y: number, width: number, depth: number) => {
-    const points = [
-      project(x * scale, y * scale),
-      project((x + width) * scale, y * scale),
-      project((x + width) * scale, (y + depth) * scale),
-      project(x * scale, (y + depth) * scale),
-    ]
-    return points.map(point).join(' ')
-  }
-  const padDefinitions = [
-    { x: 85, y: 15, width: 545, depth: 58 },
-    { x: 150, y: 575, width: 905, depth: 55 },
-  ]
-  const pads = padDefinitions.map((pad) => padPolygon(pad.x, pad.y, pad.width, pad.depth))
-  const padGap = 26
-  padDefinitions.forEach((pad) =>
-    footprints.push({
-      x: pad.x - padGap,
-      y: pad.y - padGap,
-      width: pad.width + padGap * 2,
-      height: pad.depth + padGap * 2,
-    }),
-  )
-
-  const roads: Array<string> = []
-  const intersectsFootprint = (x: number, y: number, margin: number) =>
-    footprints.some(
-      (footprint) =>
-        x > footprint.x - margin &&
-        x < footprint.x + footprint.width + margin &&
-        y > footprint.y - margin &&
-        y < footprint.y + footprint.height + margin,
-    )
-  const addRoad = (x: number, y: number, width: number, depth: number) => {
-    const tileSize = 20
-    const columns = Math.max(1, Math.round(width / tileSize))
-    const rows = Math.max(1, Math.round(depth / tileSize))
-    const tileWidth = width / columns
-    const tileDepth = depth / rows
-    const overlap = 0.7
-
-    for (let column = 0; column < columns; column += 1) {
-      for (let row = 0; row < rows; row += 1) {
-        const tileX = x + column * tileWidth
-        const tileY = y + row * tileDepth
-        const centerX = tileX + tileWidth / 2
-        const centerY = tileY + tileDepth / 2
-        if (centerY > 632 || intersectsFootprint(centerX, centerY, 6)) continue
-        roads.push(
-          [
-            project((tileX - overlap) * scale, (tileY - overlap) * scale),
-            project((tileX + tileWidth + overlap) * scale, (tileY - overlap) * scale),
-            project((tileX + tileWidth + overlap) * scale, (tileY + tileDepth + overlap) * scale),
-            project((tileX - overlap) * scale, (tileY + tileDepth + overlap) * scale),
-          ]
-            .map(point)
-            .join(' '),
-        )
-      }
-    }
-  }
-
-  addRoad(-14, -14, 30, 672)
-  addRoad(214, -14, 34, 672)
-  addRoad(700, -14, 95, 672)
-  addRoad(1018, -14, 28, 672)
-  addRoad(-14, 150, 1220, 30)
-  addRoad(-14, 300, 1220, 26)
-  addRoad(-14, 425, 1220, 30)
-  addRoad(-14, 512, 1220, 26)
-
-  const parkingCenter = project((150 + 905 / 2) * scale, (575 + 55 / 2) * scale)
-  return { boxes: boxes.sort((a, b) => a.depth - b.depth), pads, roads, parkingCenter }
-}
-
-const scene = buildScene()
 const moneyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
 
 export function PlazaMap({ stalls, selectedStallId, currentEventStallId, onSelect }: PlazaMapProps) {
@@ -235,7 +209,7 @@ export function PlazaMap({ stalls, selectedStallId, currentEventStallId, onSelec
 
   const zoomAt = (x: number, y: number, factor: number) => {
     setCamera((current) => {
-      const scale = Math.max(0.5, Math.min(4, current.scale * factor))
+      const scale = Math.max(0.6, Math.min(3, current.scale * factor))
       const contentX = (x - current.x) / current.scale
       const contentY = (y - current.y) / current.scale
       return { scale, x: x - contentX * scale, y: y - contentY * scale }
@@ -274,21 +248,20 @@ export function PlazaMap({ stalls, selectedStallId, currentEventStallId, onSelec
     drag.current.active = false
     setDragging(false)
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
-    if (!moved && stallCode) {
-      const stall = inventory.get(stallCode)
-      const isCurrent = stall?.eventStallId === currentEventStallId
-      const isBooked = !stall || (Boolean(stall.bookingId) && !isCurrent)
-      if (stall && !isBooked) onSelect(stall.eventStallId)
-    }
+    if (event.type !== 'pointerup' || moved || !stallCode) return
+
+    const stall = inventory.get(stallCode)
+    const isCurrent = stall?.eventStallId === currentEventStallId
+    const isBooked = !stall || (Boolean(stall.bookingId) && !isCurrent)
+    if (stall && !isBooked) onSelect(stall.eventStallId)
   }
 
   const handleWheel = (event: WheelEvent<SVGSVGElement>) => {
     event.preventDefault()
     const bounds = event.currentTarget.getBoundingClientRect()
     const renderedScale = bounds.width / viewBox.width
-    const verticalOffset = (bounds.height - viewBox.height * renderedScale) / 2
     const x = viewBox.x + (event.clientX - bounds.left) / renderedScale
-    const y = viewBox.y + (event.clientY - bounds.top - verticalOffset) / renderedScale
+    const y = viewBox.y + (event.clientY - bounds.top) / renderedScale
     zoomAt(x, y, event.deltaY < 0 ? 1.12 : 1 / 1.12)
   }
 
@@ -296,6 +269,7 @@ export function PlazaMap({ stalls, selectedStallId, currentEventStallId, onSelec
     if (!stall || isBooked) return
     onSelect(stall.eventStallId)
   }
+
 
   const handleStallKeyDown = (
     event: KeyboardEvent<SVGGElement>,
@@ -312,7 +286,7 @@ export function PlazaMap({ stalls, selectedStallId, currentEventStallId, onSelec
       <svg
         className={`plaza-map__svg${dragging ? ' is-dragging' : ''}`}
         viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
-        preserveAspectRatio="xMidYMid meet"
+        preserveAspectRatio="xMidYMin meet"
         role="region"
         aria-label="Interactive three-dimensional plaza stall map"
         onPointerDown={handlePointerDown}
@@ -321,62 +295,112 @@ export function PlazaMap({ stalls, selectedStallId, currentEventStallId, onSelec
         onPointerCancel={handlePointerUp}
         onWheel={handleWheel}
       >
+        <defs>
+          <linearGradient id="stall-front" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#ffffff" />
+            <stop offset="1" stopColor="#f2f4ef" />
+          </linearGradient>
+          <linearGradient id="stall-top" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#ffffff" />
+            <stop offset="1" stopColor="#f7f8f5" />
+          </linearGradient>
+          <linearGradient id="stall-right" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#eef0ec" />
+            <stop offset="1" stopColor="#dfe3db" />
+          </linearGradient>
+        </defs>
+        <rect x="0" y="300" width="1098" height="819" fill="#7c9c8a" />
         <g transform={`translate(${camera.x} ${camera.y}) scale(${camera.scale})`}>
-          {scene.pads.map((points) => (
-            <polygon key={points} points={points} fill="#c6cbc4" stroke="#b3b8b1" strokeWidth="2" />
+          {backRoads.map((points) => <polygon key={points} points={points} fill="#fff" />)}
+          {mapStalls.slice(0, 12).map((box, index) => (
+            <StallShape
+              key={box.code ?? `booked-${index}`}
+              box={box}
+              bookedNumber={index + 1}
+              stall={box.code ? inventory.get(box.code) : undefined}
+              selectedStallId={selectedStallId}
+              currentEventStallId={currentEventStallId}
+              onClick={chooseStall}
+              onKeyDown={handleStallKeyDown}
+            />
           ))}
-          {scene.roads.map((points) => (
-            <polygon key={points} points={points} fill="#f3f4ee" stroke="#e6e8e0" strokeWidth="1.5" />
+          {middleRoads.map((points) => <polygon key={points} points={points} fill="#fff" />)}
+          {mapStalls.slice(12).map((box, index) => (
+            <StallShape
+              key={box.code ?? `booked-${index + 12}`}
+              box={box}
+              bookedNumber={index + 13}
+              stall={box.code ? inventory.get(box.code) : undefined}
+              selectedStallId={selectedStallId}
+              currentEventStallId={currentEventStallId}
+              onClick={chooseStall}
+              onKeyDown={handleStallKeyDown}
+            />
           ))}
-          {scene.boxes.map((box) => {
-            const stall = inventory.get(box.code)
-            const isCurrent = stall?.eventStallId === currentEventStallId
-            const isBooked = !stall || (Boolean(stall.bookingId) && !isCurrent)
-            const isSelected = stall?.eventStallId === selectedStallId
-            const tier = stall?.tier ?? (box.sourceKind === 'corner' || box.sourceKind === 'premium' ? box.sourceKind : 'standard')
-            const palette = isSelected ? palettes.selected : isBooked ? palettes.booked : palettes[tier]
-            const state = isCurrent ? 'your current stall' : isBooked ? 'booked' : 'available'
-            const label = stall
-              ? `Stall ${stall.stallCode}, ${tier}, ${moneyFormatter.format(stall.priceCents / 100)}, ${state}`
-              : `Stall ${box.code}, booked`
-
-            return (
-              <g
-                key={box.code}
-                className="plaza-map__stall"
-                role="button"
-                tabIndex={0}
-                aria-label={label}
-                aria-disabled={isBooked}
-                aria-pressed={isSelected}
-                data-tier={tier}
-                data-stall-code={box.code}
-                onClick={() => chooseStall(stall, isBooked)}
-                onKeyDown={(event) => handleStallKeyDown(event, stall, isBooked)}
-              >
-                <title>{label}</title>
-                <polygon points={box.left} fill={palette.left} stroke={palette.stroke} strokeWidth={palette.width} />
-                <polygon points={box.right} fill={palette.right} stroke={palette.stroke} strokeWidth={palette.width} />
-                <polygon points={box.top} fill={palette.top} stroke={palette.stroke} strokeWidth={palette.width} />
-              </g>
-            )
-          })}
-          <text
-            className="plaza-map__parking-label"
-            x={scene.parkingCenter[0]}
-            y={scene.parkingCenter[1]}
-            textAnchor="middle"
-            dominantBaseline="middle"
-          >
+          <polygon points={parkingArea} fill="#d9d9d9" />
+          <text className="plaza-map__parking-label" x="604" y="872" textAnchor="middle" transform="rotate(29 604 872)">
             Parking Area
           </text>
         </g>
       </svg>
       <div className="plaza-map__zoom" aria-label="Map zoom controls">
-        <button type="button" onClick={() => zoomAt(viewBox.x + viewBox.width / 2, viewBox.y + viewBox.height / 2, 1.25)} aria-label="Zoom in">+</button>
-        <button type="button" onClick={() => zoomAt(viewBox.x + viewBox.width / 2, viewBox.y + viewBox.height / 2, 1 / 1.25)} aria-label="Zoom out">−</button>
+        <button type="button" onClick={() => zoomAt(549, 710, 1.25)} aria-label="Zoom in">+</button>
+        <button type="button" onClick={() => zoomAt(549, 710, 1 / 1.25)} aria-label="Zoom out">−</button>
         <button type="button" onClick={() => setCamera(initialCamera)}>Reset</button>
       </div>
     </>
+  )
+}
+
+type StallShapeProps = {
+  box: MapStall
+  bookedNumber: number
+  stall: PlazaMapStall | undefined
+  selectedStallId: string
+  currentEventStallId?: string | null
+  onClick: (stall: PlazaMapStall | undefined, isBooked: boolean) => void
+  onKeyDown: (event: KeyboardEvent<SVGGElement>, stall: PlazaMapStall | undefined, isBooked: boolean) => void
+}
+
+function StallShape({
+  box,
+  bookedNumber,
+  stall,
+  selectedStallId,
+  currentEventStallId,
+  onClick,
+  onKeyDown,
+}: StallShapeProps) {
+  const isCurrent = stall?.eventStallId === currentEventStallId
+  const isBooked = box.sourceTier === 'booked' || !stall || (Boolean(stall.bookingId) && !isCurrent)
+  const isSelected = stall?.eventStallId === selectedStallId
+  const tier = stall?.tier ?? (box.sourceTier === 'booked' ? 'standard' : box.sourceTier)
+  const palette = isSelected ? palettes.selected : isBooked ? palettes.booked : palettes[tier]
+  const state = isCurrent ? 'your current stall' : isBooked ? 'booked' : 'available'
+  const label = stall
+    ? `Stall ${stall.stallCode}, ${tier}, ${moneyFormatter.format(stall.priceCents / 100)}, ${state}`
+    : `Booked stall location ${bookedNumber}`
+
+  return (
+    <g>
+      <polygon className="plaza-map__shadow" points={box.shadow} />
+      <g
+        className="plaza-map__stall"
+        role="button"
+        tabIndex={0}
+        aria-label={label}
+        aria-disabled={isBooked}
+        aria-pressed={isSelected}
+        data-tier={tier}
+        data-stall-code={box.code ?? undefined}
+        onClick={() => onClick(stall, isBooked)}
+        onKeyDown={(event) => onKeyDown(event, stall, isBooked)}
+      >
+        <title>{label}</title>
+        <polygon points={box.front} fill={palette.front} stroke={palette.stroke} strokeWidth={palette.width} />
+        <polygon points={box.top} fill={palette.top} stroke={palette.stroke} strokeWidth={palette.width} />
+        <polygon points={box.right} fill={palette.right} stroke={palette.stroke} strokeWidth={palette.width} />
+      </g>
+    </g>
   )
 }
