@@ -699,8 +699,10 @@
   .static-form .field-group,
   .static-form fieldset {
     display: grid;
+    align-content: start;
     gap: 0.45rem;
   }
+
 
   .static-form label > span:not(.field-error),
   .static-form legend,
@@ -715,6 +717,7 @@
   .static-form input,
   .static-form select,
   .static-form textarea {
+    display: block;
     width: 100%;
     min-height: 3rem;
     padding: 0.8rem 1rem;
@@ -798,11 +801,13 @@
   }
 
   .field-error {
-    display: none;
+    display: block;
+    min-height: 1.1875rem;
     color: #ffb3aa;
     font-size: 0.875rem;
     font-weight: 700;
     line-height: 1.35;
+    visibility: hidden;
   }
 
   .static-form.was-validated :is(input, select, textarea):invalid {
@@ -816,7 +821,7 @@
 
   .static-form.was-validated :is(input, select, textarea):invalid + .field-error,
   .static-form.was-validated .checkbox-list:has(input:invalid) + .field-error {
-    display: block;
+    visibility: visible;
   }
 
   .form-error {
