@@ -11,14 +11,22 @@ type FormShellProps = {
 function FormShell({ children, submissionType, successMessage, className = '' }: FormShellProps) {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'submitted'>('idle')
   const [error, setError] = useState('')
+  const [showErrors, setShowErrors] = useState(false)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (status === 'submitting') return
 
     const form = event.currentTarget
+    if (!form.checkValidity()) {
+      setShowErrors(true)
+      form.querySelector<HTMLElement>(':invalid')?.focus()
+      return
+    }
+
     setStatus('submitting')
     setError('')
+    setShowErrors(false)
 
     try {
       await submitPublicForm({ data: new FormData(form) })
@@ -44,7 +52,12 @@ function FormShell({ children, submissionType, successMessage, className = '' }:
   }
 
   return (
-    <form className={`static-form ${className}`} onSubmit={submit} aria-busy={status === 'submitting'}>
+    <form
+      className={`static-form ${className}${showErrors ? ' was-validated' : ''}`}
+      onSubmit={submit}
+      aria-busy={status === 'submitting'}
+      noValidate
+    >
       <input type="hidden" name="submissionType" value={submissionType} />
       {children}
       {error ? <p className="form-error" role="alert">{error}</p> : null}
@@ -63,15 +76,18 @@ export function ContactForm() {
         <label>
           <span>First name *</span>
           <input name="firstName" autoComplete="given-name" required />
+          <span className="field-error">Enter your first name.</span>
         </label>
         <label>
           <span>Last name *</span>
           <input name="lastName" autoComplete="family-name" required />
+          <span className="field-error">Enter your last name.</span>
         </label>
       </div>
       <label>
         <span>Email address *</span>
         <input name="email" type="email" autoComplete="email" required />
+        <span className="field-error">Enter a valid email address.</span>
       </label>
       <label>
         <span>I’d like more information on</span>
@@ -112,15 +128,18 @@ export function VolunteerForm() {
         <label>
           <span>First name *</span>
           <input name="firstName" autoComplete="given-name" required />
+          <span className="field-error">Enter your first name.</span>
         </label>
         <label>
           <span>Last name *</span>
           <input name="lastName" autoComplete="family-name" required />
+          <span className="field-error">Enter your last name.</span>
         </label>
       </div>
       <label>
         <span>Email address *</span>
         <input name="email" type="email" autoComplete="email" required />
+        <span className="field-error">Enter a valid email address.</span>
       </label>
       <label>
         <span>I’d like to help with</span>
@@ -184,12 +203,14 @@ export function SchoolInterestForm() {
           <p>Child’s name</p>
           <div className="field-row">
             <label>
-              <span>First name *</span>
-              <input name="childFirstName" required />
+              <span className="sr-only">First name</span>
+              <input name="childFirstName" placeholder="First name *" required />
+              <span className="field-error">Enter the child’s first name.</span>
             </label>
             <label>
-              <span>Last name *</span>
-              <input name="childLastName" required />
+              <span className="sr-only">Last name</span>
+              <input name="childLastName" placeholder="Last name *" required />
+              <span className="field-error">Enter the child’s last name.</span>
             </label>
           </div>
         </div>
@@ -197,35 +218,40 @@ export function SchoolInterestForm() {
           <p>Parent / guardian contact</p>
           <div className="field-row">
             <label>
-              <span>Email address *</span>
-              <input name="guardianEmail" type="email" autoComplete="email" required />
+              <span className="sr-only">Email address</span>
+              <input name="guardianEmail" type="email" autoComplete="email" placeholder="Email address *" required />
+              <span className="field-error">Enter a valid email address.</span>
             </label>
             <label>
-              <span>Phone number *</span>
-              <input name="guardianPhone" type="tel" autoComplete="tel" required />
+              <span className="sr-only">Phone number</span>
+              <input name="guardianPhone" type="tel" autoComplete="tel" placeholder="Phone number *" required />
+              <span className="field-error">Enter a phone number.</span>
             </label>
           </div>
         </div>
         <label>
-          <span>Child’s age / grade *</span>
-          <input name="ageOrGrade" placeholder="e.g. Age 4, or Grade 2" required />
+          <span className="sr-only">Child’s age or grade</span>
+          <input name="ageOrGrade" placeholder="Age or grade *" required />
+          <span className="field-error">Enter the child’s age or grade.</span>
         </label>
         <fieldset>
           <legend>Programme of interest</legend>
           <div className="checkbox-list">
-            {programmes.map((programme) => (
+            {programmes.map((programme, index) => (
               <label key={programme}>
                 <input
                   type="checkbox"
                   name="programmes"
                   value={programme}
                   checked={selected.includes(programme)}
+                  required={index === 0 && selected.length === 0}
                   onChange={() => toggle(programme)}
                 />
                 <span>{programme}</span>
               </label>
             ))}
           </div>
+          <span className="field-error">Choose at least one programme.</span>
         </fieldset>
         <label>
           <span>Desired start date</span>

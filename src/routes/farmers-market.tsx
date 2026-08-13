@@ -1,14 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ScrollCue, SectionNav } from '../components/ScrollSections'
+import { useState } from 'react'
+import { ScrollCue } from '../components/ScrollSections'
 import { SectionHeading, SiteFooter } from '../components/SitePieces'
 import { SiteHeader } from '../components/SiteHeader'
 import { vendors } from '../site-data'
-
-const sections = [
-  { id: 'market-intro', label: 'Farmers Market' },
-  { id: 'vendor-process', label: 'Vendor process' },
-  { id: 'market-vendors', label: 'Our vendors' },
-] as const
 
 const processSteps = [
   {
@@ -39,13 +34,13 @@ export const Route = createFileRoute('/farmers-market')({
 })
 
 function FarmersMarketPage() {
+  const [expandedVendor, setExpandedVendor] = useState<string | null>(null)
 
   return (
     <div className="page-shell market-page">
-      <SiteHeader active="/farmers-market" inverse />
-      <SectionNav sections={sections} />
+      <SiteHeader active="/farmers-market" surface="green" />
       <main id="main-content" className="snap-page">
-        <section id="market-intro" className="page-section market-hero">
+        <section id="market-intro" className="page-section market-hero" data-header-surface="green">
           <div className="split-layout split-layout--hero">
             <div>
               <p className="eyebrow">Every Saturday · 9 AM–12 PM</p>
@@ -56,11 +51,11 @@ function FarmersMarketPage() {
                 welcoming atmosphere that feels like classic Key Biscayne.
               </p>
               <div className="button-row">
-                <a className="button button--market" href="/farmers-market/vendor/sign-up">
-                  Apply as a vendor <span aria-hidden="true">→</span>
+                <a className="button button--gold" href="/farmers-market/vendor/sign-up">
+                  Book a stall <span aria-hidden="true">→</span>
                 </a>
                 <a className="button button--ghost" href="/farmers-market/vendor/login">
-                  Vendor portal
+                  Log in
                 </a>
               </div>
             </div>
@@ -72,34 +67,67 @@ function FarmersMarketPage() {
           <ScrollCue target="vendor-process" inverse />
         </section>
 
-        <section id="vendor-process" className="page-section market-process-section">
+        <section
+          id="vendor-process"
+          className="page-section market-process-section"
+          data-header-surface="green-pale"
+        >
           <SectionHeading eyebrow="For vendors" title="Sell your goods on the plaza" />
           <ol className="process-grid">
             {processSteps.map((step, index) => (
               <li key={step.title}>
-                <span>0{index + 1}</span>
+                <span>Step {index + 1}</span>
                 <h3>{step.title}</h3>
                 <p>{step.copy}</p>
               </li>
             ))}
           </ol>
           <a className="button button--market-dark" href="/farmers-market/vendor/sign-up">
-            Start vendor application <span aria-hidden="true">→</span>
+            Book a stall <span aria-hidden="true">→</span>
           </a>
         </section>
 
-        <section id="market-vendors" className="page-section market-vendors-section">
+        <section
+          id="market-vendors"
+          className="page-section market-vendors-section"
+          data-header-surface="green-pale"
+        >
           <SectionHeading eyebrow="Meet our vendors" title="A few market favorites" />
           <div className="vendor-grid">
-            {vendors.map((vendor) => (
-              <article key={vendor.name} className="vendor-card">
-                <img src={vendor.image} alt={`${vendor.name} market stall`} />
-                <div>
-                  <p className="eyebrow">{vendor.category}</p>
-                  <h3>{vendor.name}</h3>
-                </div>
-              </article>
-            ))}
+            {vendors.map((vendor) => {
+              const expanded = expandedVendor === vendor.name
+              return (
+                <article
+                  key={vendor.name}
+                  className={`vendor-card${expanded ? ' is-expanded' : ''}`}
+                >
+                  <button
+                    className="vendor-card__trigger"
+                    type="button"
+                    aria-expanded={expanded}
+                    onClick={() => setExpandedVendor(expanded ? null : vendor.name)}
+                  >
+                    <img src={vendor.image} alt={`${vendor.name} market stall`} />
+                    <span className="vendor-card__copy">
+                      <span className="eyebrow">{vendor.category}</span>
+                      <strong>{vendor.name}</strong>
+                      <span className="vendor-card__more">{expanded ? 'Read less −' : 'Read more +'}</span>
+                    </span>
+                  </button>
+                  {expanded ? (
+                    <div className="vendor-card__details">
+                      <p className="eyebrow">Vendor details</p>
+                      <h3>{vendor.name}</h3>
+                      <dl>
+                        <div><dt>Category</dt><dd>{vendor.category}</dd></div>
+                        <div><dt>When</dt><dd>Saturdays · 9 AM–12 PM</dd></div>
+                        <div><dt>Where</dt><dd>Key Biscayne Community Church plaza</dd></div>
+                      </dl>
+                    </div>
+                  ) : null}
+                </article>
+              )
+            })}
           </div>
           <SiteFooter />
         </section>

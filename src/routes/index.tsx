@@ -1,17 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ImageAlbum } from '../components/ImageAlbum'
-import { ScrollCue, SectionNav } from '../components/ScrollSections'
-import { ArrowLink, ScheduleList, SectionHeading, SiteFooter } from '../components/SitePieces'
+import { ScrollCue } from '../components/ScrollSections'
+import { ScheduleList, SectionHeading, SiteFooter } from '../components/SitePieces'
 import { SiteHeader } from '../components/SiteHeader'
 import { homeEvents } from '../site-data'
 
-const sections = [
-  { id: 'welcome', label: 'Welcome' },
-  { id: 'our-mission', label: 'Our mission' },
-  { id: 'belong', label: 'Ways to belong' },
-  { id: 'events', label: 'Events' },
-  { id: 'weekly-rhythm', label: 'Weekly rhythm' },
-] as const
 
 export const Route = createFileRoute('/')({
   head: () => ({
@@ -29,10 +22,9 @@ export const Route = createFileRoute('/')({
 function HomePage() {
   return (
     <div className="page-shell">
-      <SiteHeader inverse />
-      <SectionNav sections={sections} />
+      <SiteHeader surface="image" />
       <main id="main-content" className="snap-page">
-        <section id="welcome" className="page-section home-hero">
+        <section id="welcome" className="page-section home-hero" data-header-surface="image">
           <img className="home-hero__image" src="/images/church-hero.png" alt="Key Biscayne Community Church congregation" />
           <div className="home-hero__shade" />
           <div className="glass-hero">
@@ -55,7 +47,7 @@ function HomePage() {
           <ScrollCue target="our-mission" inverse />
         </section>
 
-        <section id="our-mission" className="page-section section-cream">
+        <section id="our-mission" className="page-section section-cream" data-header-surface="cream">
           <div className="split-layout split-layout--mission">
             <div>
               <SectionHeading
@@ -99,7 +91,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section id="belong" className="page-section section-blue-mist">
+        <section id="belong" className="page-section section-blue-mist" data-header-surface="mist">
           <SectionHeading eyebrow="Come & belong" title="Three ways to be part of it" body="Choose a card to step inside." />
           <div className="belong-grid">
             <a className="belong-card belong-card--market" href="/farmers-market">
@@ -132,11 +124,20 @@ function HomePage() {
           </div>
         </section>
 
-        <section id="events" className="page-section section-cream">
-          <div className="heading-row">
-            <SectionHeading eyebrow="What’s happening" title="Coming up on the island" />
-            <ArrowLink href="/about#calendar">View all events</ArrowLink>
-          </div>
+        <section
+          id="events"
+          className="page-section section-cream home-events-section"
+          data-header-surface="cream"
+        >
+          <header className="event-heading">
+            <p className="eyebrow">What’s happening</p>
+            <div className="event-heading__row">
+              <h2>Coming up on the island</h2>
+              <a className="event-heading__link" href="/about#calendar">
+                View all events
+              </a>
+            </div>
+          </header>
           <div className="event-grid">
             {homeEvents.map((event) => (
               <article key={event.title} className={`event-card tone-${event.tone}`}>
@@ -156,7 +157,7 @@ function HomePage() {
           </div>
         </section>
 
-        <section id="weekly-rhythm" className="page-section invitation-section">
+        <section id="weekly-rhythm" className="page-section invitation-section" data-header-surface="navy">
           <div className="invitation-grid">
             <div className="invitation-copy">
               <p className="eyebrow eyebrow--gold">Join us this Sunday</p>

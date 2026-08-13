@@ -1,16 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ScrollCue, SectionNav } from '../components/ScrollSections'
+import { ScrollCue } from '../components/ScrollSections'
 import { SchoolInterestForm } from '../components/StaticForms'
 import { SectionHeading, SiteFooter } from '../components/SitePieces'
 import { SiteHeader } from '../components/SiteHeader'
 
-const sections = [
-  { id: 'school-intro', label: 'Community School' },
-  { id: 'day-school', label: 'Day School' },
-  { id: 'after-school', label: 'After-School' },
-  { id: 'summer-camp', label: 'Summer Camp' },
-  { id: 'register', label: 'Register interest' },
-] as const
 
 const objectives = [
   'Self-help skills',
@@ -59,10 +52,9 @@ export const Route = createFileRoute('/community-school')({
 function CommunitySchoolPage() {
   return (
     <div className="page-shell school-page">
-      <SiteHeader active="/community-school" />
-      <SectionNav sections={sections} />
+      <SiteHeader active="/community-school" surface="school" />
       <main id="main-content" className="snap-page">
-        <section id="school-intro" className="page-section school-hero">
+        <section id="school-intro" className="page-section school-hero" data-header-surface="school">
           <div className="split-layout split-layout--hero">
             <div>
               <p className="eyebrow">Your little one will flourish at</p>
@@ -84,7 +76,7 @@ function CommunitySchoolPage() {
           <ScrollCue target="day-school" />
         </section>
 
-        <section id="day-school" className="page-section section-blue-mist">
+        <section id="day-school" className="page-section section-blue-mist" data-header-surface="mist">
           <SectionHeading
             eyebrow="Ages 2–5"
             title="KBCC Day School"
@@ -125,7 +117,7 @@ function CommunitySchoolPage() {
           </div>
         </section>
 
-        <section id="after-school" className="page-section school-dark-section">
+        <section id="after-school" className="page-section school-dark-section" data-header-surface="navy">
           <SectionHeading
             inverse
             eyebrow="Toddlers through elementary · open to the community"
@@ -163,7 +155,7 @@ function CommunitySchoolPage() {
           </div>
         </section>
 
-        <section id="summer-camp" className="page-section section-blue-mist">
+        <section id="summer-camp" className="page-section section-blue-mist" data-header-surface="mist">
           <SectionHeading eyebrow="Summer on the island" title="Summer Camp" />
           <div className="summer-grid">
             <figure className="landscape-image landscape-image--summer">
@@ -185,14 +177,11 @@ function CommunitySchoolPage() {
                 This year’s themes and exact dates are being finalized. Register your interest and
                 we’ll follow up.
               </p>
-              <a className="button button--primary" href="#register">
-                Register interest <span aria-hidden="true">→</span>
-              </a>
             </div>
           </div>
         </section>
 
-        <section id="register" className="page-section school-register-section">
+        <section id="register" className="page-section school-register-section" data-header-surface="navy">
           <SectionHeading inverse eyebrow="Register your child" title="Registration interest form" />
           <SchoolInterestForm />
           <SiteFooter inverse />

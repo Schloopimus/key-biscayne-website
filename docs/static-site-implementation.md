@@ -71,7 +71,6 @@ TanStack Start renders the route and hydrates the small interactive components. 
 ```text
 page shell
 ├── fixed SiteHeader
-├── fixed SectionNav dots on desktop
 └── scrollable main.snap-page
     ├── section.page-section
     ├── section.page-section
@@ -212,8 +211,7 @@ Located under `src/components/`:
 - `SiteHeader.tsx`
   - Shared brand, navigation, active route, Donate action, and responsive menu
 - `ScrollSections.tsx`
-  - Active section dots and scroll cues
-  - Uses `IntersectionObserver` against `.snap-page`
+  - Accessible scroll cues linking to the next section
 - `ImageAlbum.tsx`
   - Previous/next image controls, position indicator, captions, and decorative stack
 - `EventCalendar.tsx`
@@ -334,7 +332,7 @@ The Figma supplied desktop frames only. The implementation defines the missing b
 - Cards and galleries reduce from three columns to two and then one.
 - Paired form fields become single-column on narrow screens.
 - Calendar and detail panel stack.
-- Section navigation dots are hidden on mobile.
+- Vertical section-navigation dots are not rendered at any viewport.
 - Fixed-height Figma panels become content-driven sections.
 - No route should create horizontal scrolling.
 

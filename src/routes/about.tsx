@@ -1,17 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { EventCalendar } from '../components/EventCalendar'
-import { ScrollCue, SectionNav } from '../components/ScrollSections'
+import { ScrollCue } from '../components/ScrollSections'
 import { ContactForm } from '../components/StaticForms'
 import { ScheduleList, SectionHeading, SiteFooter } from '../components/SitePieces'
 import { SiteHeader } from '../components/SiteHeader'
 
-const sections = [
-  { id: 'about-intro', label: 'About our church' },
-  { id: 'find-us', label: 'Find us' },
-  { id: 'schedule', label: 'Weekly schedule' },
-  { id: 'calendar', label: 'Calendar' },
-  { id: 'contact', label: 'Contact' },
-] as const
 
 export const Route = createFileRoute('/about')({
   head: () => ({
@@ -29,10 +22,9 @@ export const Route = createFileRoute('/about')({
 function AboutPage() {
   return (
     <div className="page-shell">
-      <SiteHeader active="/about" />
-      <SectionNav sections={sections} />
+      <SiteHeader active="/about" surface="mist" />
       <main id="main-content" className="snap-page">
-        <section id="about-intro" className="page-section about-intro section-blue-mist">
+        <section id="about-intro" className="page-section about-intro section-blue-mist" data-header-surface="mist">
           <div className="quote-block">
             <p className="eyebrow">About our church</p>
             <h1>
@@ -49,7 +41,7 @@ function AboutPage() {
           <ScrollCue target="find-us" />
         </section>
 
-        <section id="find-us" className="page-section section-cream">
+        <section id="find-us" className="page-section section-cream" data-header-surface="cream">
           <div className="location-grid">
             <div>
               <SectionHeading eyebrow="Find us" title="On the island, by the sea" />
@@ -87,7 +79,7 @@ function AboutPage() {
           </div>
         </section>
 
-        <section id="schedule" className="page-section section-blue-mist schedule-section">
+        <section id="schedule" className="page-section section-blue-mist schedule-section" data-header-surface="mist">
           <SectionHeading
             eyebrow="What’s happening at KBCC"
             title="There’s always something happening at KBCC."
@@ -99,12 +91,12 @@ function AboutPage() {
           </a>
         </section>
 
-        <section id="calendar" className="page-section section-cream">
+        <section id="calendar" className="page-section section-cream" data-header-surface="cream">
           <SectionHeading eyebrow="Monthly snapshot" title="Events this month" />
           <EventCalendar />
         </section>
 
-        <section id="contact" className="page-section contact-section">
+        <section id="contact" className="page-section contact-section" data-header-surface="navy">
           <div className="contact-layout">
             <div>
               <p className="eyebrow eyebrow--gold">Contact us</p>

@@ -1,17 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ImageAlbum } from '../components/ImageAlbum'
-import { ScrollCue, SectionNav } from '../components/ScrollSections'
+import { ScrollCue } from '../components/ScrollSections'
 import { VolunteerForm } from '../components/StaticForms'
 import { SectionHeading, SiteFooter } from '../components/SitePieces'
 import { SiteHeader } from '../components/SiteHeader'
 
-const sections = [
-  { id: 'mission-intro', label: 'Outreach ministries' },
-  { id: 'involvement', label: 'Get involved' },
-  { id: 'outreach', label: 'Community outreach' },
-  { id: 'worship-team', label: 'Worship team' },
-  { id: 'volunteer', label: 'Volunteer' },
-] as const
 
 const ministries = [
   {
@@ -47,10 +40,9 @@ export const Route = createFileRoute('/mission')({
 function MissionPage() {
   return (
     <div className="page-shell mission-page">
-      <SiteHeader active="/mission" />
-      <SectionNav sections={sections} />
+      <SiteHeader active="/mission" surface="warm" />
       <main id="main-content" className="snap-page">
-        <section id="mission-intro" className="page-section mission-hero">
+        <section id="mission-intro" className="page-section mission-hero" data-header-surface="warm">
           <div className="split-layout split-layout--hero">
             <div>
               <p className="eyebrow">Outreach ministries</p>
@@ -71,7 +63,7 @@ function MissionPage() {
           <ScrollCue target="involvement" />
         </section>
 
-        <section id="involvement" className="page-section mission-light-section">
+        <section id="involvement" className="page-section mission-light-section" data-header-surface="cream">
           <SectionHeading eyebrow="Learn more about" title="Ministry involvement" />
           <div className="ministry-grid">
             {ministries.map((ministry, index) => (
@@ -86,7 +78,7 @@ function MissionPage() {
           </div>
         </section>
 
-        <section id="outreach" className="page-section mission-dark-section">
+        <section id="outreach" className="page-section mission-dark-section" data-header-surface="brown">
           <SectionHeading
             inverse
             eyebrow="Eric Labrador, Outreach Director"
@@ -95,24 +87,21 @@ function MissionPage() {
           />
           <div className="impact-grid">
             <article>
-              <strong>7+</strong>
-              <h3>Restoration homes</h3>
+              <h3><strong>7+</strong> restoration homes we work with:</h3>
               <p>
                 Men’s clothing and hygiene-product donations are always needed. We can coordinate
                 pickup for items you would like to give.
               </p>
             </article>
             <article>
-              <strong>3×</strong>
-              <h3>Homeless ministry each week</h3>
+              <h3><strong>3×</strong> a week we conduct homeless ministry:</h3>
               <p>
                 Alongside Pastor Frank and United We All Can, members volunteer to serve our
                 neighbours. Contact Eric Labrador at 786.285.4498.
               </p>
             </article>
             <article>
-              <strong>5+</strong>
-              <h3>Community-impact events each year</h3>
+              <h3><strong>5+</strong> events a year that impact our local community + provide assistance to our external missions</h3>
               <p>
                 Food drives, donations, and volunteer opportunities support our island and our
                 external missions.
@@ -121,7 +110,7 @@ function MissionPage() {
           </div>
         </section>
 
-        <section id="worship-team" className="page-section mission-light-section">
+        <section id="worship-team" className="page-section mission-light-section" data-header-surface="cream">
           <div className="split-layout split-layout--reverse">
             <ImageAlbum
               images={[
@@ -161,7 +150,7 @@ function MissionPage() {
           </div>
         </section>
 
-        <section id="volunteer" className="page-section volunteer-section">
+        <section id="volunteer" className="page-section volunteer-section" data-header-surface="brown">
           <div className="contact-layout">
             <div>
               <p className="eyebrow eyebrow--gold">Give your time</p>

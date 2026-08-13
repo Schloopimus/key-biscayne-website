@@ -25,7 +25,7 @@ function portalView(area: MarketPortalLayoutProps['area'], pathname: string) {
 export function MarketPortalLayout({ area, active, children }: MarketPortalLayoutProps) {
   return (
     <div className={`market-portal market-portal--${area}`}>
-      <SiteHeader active="/farmers-market" />
+      <SiteHeader active="/farmers-market" surface="portal" />
       <main id="main-content" className={`portal-main portal-main--${portalView(area, active)}`}>
         {children}
       </main>

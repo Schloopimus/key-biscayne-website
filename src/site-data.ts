@@ -17,7 +17,7 @@ export const weeklySchedule = [
   {
     day: 'Saturday',
     name: 'Farmers market',
-    time: '9:00 am – 12:00 pm',
+    time: '9:00 am – 2:00 pm',
     description:
       'Fresh finds, local vendors, and a relaxed way to connect with the community.',
     tone: 'green',
@@ -32,7 +32,7 @@ export const weeklySchedule = [
   {
     day: 'Tuesday',
     name: 'Youth ministry',
-    time: '7:00 pm',
+    time: '7:00 am',
     description:
       'A space where students 8+ build friendships, confidence, and faith.',
     tone: 'sky',
