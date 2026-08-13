@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { ImageAlbum } from '../components/ImageAlbum'
-import { ScrollCue } from '../components/ScrollSections'
 import { VolunteerForm } from '../components/StaticForms'
 import { SectionHeading, SiteFooter } from '../components/SitePieces'
 import { SiteHeader } from '../components/SiteHeader'
@@ -60,7 +59,6 @@ function MissionPage() {
               <figcaption>Eric Labrador, Outreach Director</figcaption>
             </figure>
           </div>
-          <ScrollCue target="involvement" />
         </section>
 
         <section id="involvement" className="page-section mission-light-section" data-header-surface="cream">

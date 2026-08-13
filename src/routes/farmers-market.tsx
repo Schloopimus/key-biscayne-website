@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { ScrollCue } from '../components/ScrollSections'
 import { SectionHeading, SiteFooter } from '../components/SitePieces'
 import { SiteHeader } from '../components/SiteHeader'
 import { vendors } from '../site-data'
@@ -64,7 +63,6 @@ function FarmersMarketPage() {
               <figcaption>Farmers Market</figcaption>
             </figure>
           </div>
-          <ScrollCue target="vendor-process" inverse />
         </section>
 
         <section

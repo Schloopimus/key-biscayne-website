@@ -1,5 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ScrollCue } from '../components/ScrollSections'
 import { SchoolInterestForm } from '../components/StaticForms'
 import { SectionHeading, SiteFooter } from '../components/SitePieces'
 import { SiteHeader } from '../components/SiteHeader'
@@ -73,7 +72,6 @@ function CommunitySchoolPage() {
               <figcaption>KBCC Day School</figcaption>
             </figure>
           </div>
-          <ScrollCue target="day-school" />
         </section>
 
         <section id="day-school" className="page-section section-blue-mist" data-header-surface="mist">

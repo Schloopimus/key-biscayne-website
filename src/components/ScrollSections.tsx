@@ -9,7 +9,9 @@ export function ScrollCue({ target, label = 'Scroll', inverse = false }: ScrollC
   return (
     <a className={`scroll-cue${inverse ? ' scroll-cue--inverse' : ''}`} href={`#${target}`}>
       <span>{label}</span>
-      <span aria-hidden="true">↓</span>
+      <span className="scroll-cue__arrow" aria-hidden="true">
+        ↓
+      </span>
     </a>
   )
 }

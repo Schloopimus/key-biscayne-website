@@ -376,18 +376,27 @@
 
   .scroll-cue {
     position: absolute;
-    right: var(--page-pad);
-    bottom: 2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    bottom: 3.25rem;
+    left: 50%;
+    display: grid;
     color: var(--blue);
     font-family: 'Barlow Semi Condensed', sans-serif;
-    font-size: 0.875rem;
-    font-weight: 700;
-    letter-spacing: 0.16em;
+    font-size: 1.3125rem;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    line-height: 1.2;
     text-transform: uppercase;
-    writing-mode: vertical-rl;
+    transform: translateX(-50%);
+    justify-items: center;
+    gap: 0.625rem;
+  }
+
+  .scroll-cue__arrow {
+    font-family: 'Manrope', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1;
   }
 
   .scroll-cue--inverse {
