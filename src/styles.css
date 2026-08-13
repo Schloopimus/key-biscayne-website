@@ -781,10 +781,12 @@
     accent-color: var(--blue);
   }
 
-  .checkbox-list label > span {
+  .static-form .checkbox-list label > span {
     color: var(--ink);
     font-size: 0.88rem;
+    font-weight: 600;
     letter-spacing: 0;
+    opacity: 1;
     text-transform: none;
   }
 
