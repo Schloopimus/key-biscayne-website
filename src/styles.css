@@ -1272,35 +1272,52 @@
   }
 
   .about-intro {
+    padding-top: var(--header-h);
+    padding-bottom: var(--header-h);
     justify-content: center;
   }
 
   .quote-block {
     display: grid;
     width: min(100%, 60rem);
-    gap: 1.5rem;
+  }
+
+  .quote-block > .eyebrow {
+    margin-bottom: 1.25rem;
+    font-size: 1.3125rem;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    line-height: 1.2;
   }
 
   .quote-block h1 {
+    margin-bottom: 1.25rem;
     color: var(--navy);
-    font-size: clamp(3.1rem, 5.1vw, 5rem);
+    font-size: clamp(3.1rem, 4.1667vw, 3.75rem);
     font-style: italic;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 0.92;
   }
 
   .quote-block cite {
+    margin-bottom: 2.5rem;
     color: var(--blue);
     font-family: 'Barlow Semi Condensed', sans-serif;
-    font-size: 0.8rem;
+    font-size: 1.3125rem;
     font-style: normal;
-    font-weight: 700;
-    letter-spacing: 0.2em;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    line-height: 1.2;
     text-transform: uppercase;
   }
 
   .quote-block__body {
-    max-width: 40rem;
+    max-width: 37.9375rem;
     color: #5b7488;
-    font-size: 1.15rem;
+    font-size: 1.3125rem;
+    font-weight: 600;
+    line-height: 1.5;
   }
 
   .location-grid {
@@ -2289,6 +2306,10 @@
 
     .glass-hero h1 {
       font-size: clamp(3rem, 15vw, 4rem);
+    }
+
+    .quote-block h1 {
+      font-size: clamp(3rem, 13vw, 3.75rem);
     }
 
     .button-row,
