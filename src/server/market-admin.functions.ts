@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start'
 import { and, eq, gt, inArray } from 'drizzle-orm'
 import { getDatabase } from './db'
 import * as schema from './db/schema'
-import { adminConfigured, endSession, ensureConfiguredAdmin, requireAdmin, sessionSubject, startSession, verifyPassword } from './market/auth'
+import { adminConfigured, endSession, ensureConfiguredAdmin, requireAdmin, startSession, verifyPassword } from './market/auth'
 import {
   SPACE_LOST_NOTICE,
   adjustStock,
@@ -37,8 +37,6 @@ import {
 } from '../market/rules'
 
 // ---------- Sign in ----------
-
-export const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => ({ signedIn: !!sessionSubject('admin') }))
 
 export const logInAdmin = createServerFn({ method: 'POST' })
   .validator((input: { email: string; password: string }) => ({

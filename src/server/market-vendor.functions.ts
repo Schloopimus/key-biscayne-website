@@ -288,12 +288,6 @@ export const getVendorProfile = createServerFn({ method: 'GET' }).handler(async 
   return { me: profile(vendor) }
 })
 
-export const dismissNotice = createServerFn({ method: 'POST' }).handler(async () => {
-  const vendor = requireVendor()
-  setNotice(getDatabase(), vendor.id, '')
-  return { ok: true }
-})
-
 // ---------- Application ----------
 
 type StepInput = {

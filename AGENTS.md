@@ -185,6 +185,6 @@ Do not write automated tests unless requested. Browser review is the required pr
 - Treat unrecognized changes as the owner’s work.
 - Never reset, clean, force-push, or rewrite history.
 - Stage only intended project files.
-- Keep local harness state such as `.omp/` out of commits.
+- Keep local harness state such as `.omp/`, local secrets (`.env.local`) and local data (`.data/`) out of commits.
 - Use a concrete commit message describing the delivered product change.
 - Push only after an explicit owner request.
