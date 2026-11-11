@@ -4,7 +4,7 @@ Applies to every coding agent working anywhere in this repository.
 
 ## Mission
 
-Build and maintain a faithful, restrained website for Key Biscayne Community Church and Day School. Correctness, clarity, accessibility, and fidelity to the supplied Figma take priority over novelty.
+Build and maintain the Key Biscayne Farmers Market site: the public market page, the vendor portal and the market admin. Correctness, clarity, accessibility, and fidelity to the Farmers Market design take priority over novelty.
 
 This is not a sandbox for framework experiments or generic AI-generated design. Understand the repository before touching it, take responsibility for every change, and leave the code easier to trust.
 
@@ -13,15 +13,11 @@ This is not a sandbox for framework experiments or generic AI-generated design. 
 Before planning or editing:
 
 1. `CLAUDE.md`
-2. `docs/static-site-implementation.md`
-3. `docs/entire-website-analysis.md`
-4. `package.json`
-5. The complete affected route, component, data source, and relevant CSS sections
+2. `docs/farmers-market.md`
+3. `package.json`
+4. The complete affected route, component, server function, and relevant CSS sections
 
-Primary Figma sources:
-
-- Static public site: [node `245:337`](https://www.figma.com/design/uA8xQYR2zK6oBKpm97K1mm/Key-Biscayne-Church?node-id=245-337)
-- Future Farmers Market product: [node `251:339`](https://www.figma.com/design/uA8xQYR2zK6oBKpm97K1mm/Key-Biscayne-Church?node-id=251-339)
+Design source: the Farmers Market design (Claude Design artifact `FarmersMarket.dc.html`).
 
 Do not open random files and hope. Locate the owning implementation and follow existing conventions.
 
@@ -36,12 +32,13 @@ Current implementation:
 - TypeScript
 - Rsbuild
 - Plain CSS and CSS custom properties
+- Drizzle with SQLite (`better-sqlite3` in development, `bun:sqlite` in production)
+- Session cookies with scrypt-hashed passwords
 - One application
 
 Planned only when explicitly approved:
 
 - Better Auth
-- Drizzle with `bun:sqlite`
 - Resend
 - Private R2 storage
 - Stripe Checkout
@@ -56,7 +53,7 @@ The planned services are not permission to install or scaffold them now.
 - No second frontend, microservices, or separate API service.
 - No Tailwind, shadcn, Material UI, Chakra, Bootstrap, or generic component library.
 - No CMS, GraphQL, tRPC, Redux, Redis, Prisma, or speculative infrastructure.
-- No database/auth/email/payment/storage/deployment integration until requested.
+- No external email, payment, storage, or deployment integration until requested.
 - No automated tests or test scaffolding until requested.
 - No hand edits to `src/routeTree.gen.ts`.
 - No fake content, fake contact details, fake links, stock imagery, or generated visual filler.
@@ -71,14 +68,14 @@ The planned services are not permission to install or scaffold them now.
 
 “Slop” includes technically valid code that ignores the product:
 
-- A generic church template instead of the Figma art direction
+- A generic template instead of the Farmers Market design
 - Random gradients, glass cards, badges, icons, or animations with no design source
 - Turning every piece of content into the same rounded card
 - Replacing editorial typography with a UI-library default
 - Inventing a dashboard, workflow, copy, contact information, or integration
 - Building abstractions before two real call sites require them
 - Adding dependencies where platform or existing code already solves the problem
-- Ignoring mobile because the supplied Figma is desktop-only
+- Ignoring mobile or tablet layouts
 - Hiding broken behavior behind a placeholder or no-op
 - Claiming success after compilation without exercising the page
 
@@ -88,34 +85,29 @@ When in doubt, choose the boring, explicit implementation that matches the curre
 
 Preserve unless the owner explicitly changes them:
 
-- Five public routes: `/`, `/about`, `/community-school`, `/mission`, `/farmers-market`
-- `.snap-page` is the internal vertical scroll container.
-- Each direct `.page-section` is a snap target.
-- `HashScrollManager` aligns cross-route hashes inside the internal scroll container.
-- Desktop section navigation dots track the visible section.
-- Mobile navigation replaces the desktop nav below the existing breakpoint.
-- Forms are local-only previews and must say so.
-- Market login/signup actions must not pretend the management product exists.
-- Shared navigation, schedule, events, and vendor data live in `src/site-data.ts`.
-- Figma imagery lives in `public/images/`.
-- Global visual behavior lives in the layered `src/styles.css` design system.
+- Routes: `/`, `/check-email`, `/set-password`, `/vendor/*`, `/admin/*`, `/api/documents/$documentId`.
+- The public page scrolls inside `.kb-scroller`; the header buttons scroll to its section IDs.
+- Market rules (plans, Monday-midnight deadline, 72-hour cancellations, holds, approval expiry, add-on stock) are enforced on the server in `src/server/market/core.ts` and the `market-*.functions.ts` files.
+- Vendor documents are stored under `.data/market-documents/` and served only to a signed-in admin.
+- No email or payment provider is connected: emails are logged by `src/server/market/email.ts`, and "Continue to payment" marks Saturdays as Confirming until an admin marks them paid.
+- Admin credentials come from `KBCC_ADMIN_EMAIL` / `KBCC_ADMIN_PASSWORD` (see `.env.example`); never commit real credentials.
+- Images live in `public/images/`.
 
 ## Code ownership map
 
-- `src/routes/__root.tsx` — document metadata, root rendering, hash alignment
-- `src/routes/index.tsx` — homepage
-- `src/routes/about.tsx` — About, schedule, calendar, contact
-- `src/routes/community-school.tsx` — school programmes and interest form
-- `src/routes/mission.tsx` — mission, outreach, worship, volunteer form
-- `src/routes/farmers-market.tsx` — public market page
-- `src/components/SiteHeader.tsx` — shared navigation
-- `src/components/ScrollSections.tsx` — section dots and scroll cues
-- `src/components/ImageAlbum.tsx` — interactive image stack
-- `src/components/EventCalendar.tsx` — calendar interaction
-- `src/components/StaticForms.tsx` — local-only forms
-- `src/components/SitePieces.tsx` — shared headings, schedule, footer, links
-- `src/site-data.ts` — shared structured content
-- `src/styles.css` — tokens, layout, components, route styling, responsive behavior
+- `src/routes/__root.tsx` — document metadata and not-found page
+- `src/routes/index.tsx` — public market page and vendor sign-up
+- `src/routes/check-email.tsx`, `src/routes/set-password.tsx` — account activation and password links
+- `src/routes/vendor.*.tsx` — vendor login, dashboard, application, map, review, payment, account, details
+- `src/routes/admin.*.tsx` — admin sign-in and dashboard
+- `src/routes/api.documents.$documentId.ts` — admin-only document download
+- `src/components/market/` — header, account menu, toast, dialogs, status badge, vendor record pieces
+- `src/market/plaza.ts` — stall geometry and zones
+- `src/market/rules.ts` — dates, plans, prices, categories, agreements, documents
+- `src/server/market-vendor.functions.ts`, `src/server/market-admin.functions.ts` — server functions
+- `src/server/market/` — sessions, booking rules, email stub
+- `src/server/db/` — schema and database bootstrap; migrations in `drizzle/`
+- `src/styles.css` — reset and market styles
 - `src/routeTree.gen.ts` — generated; never edit
 
 ## Change workflow
@@ -144,16 +136,16 @@ Never expand a focused request into a redesign, refactor, dependency migration, 
 - Keep image alt text contextual and decorative imagery silent.
 - Respect `prefers-reduced-motion`.
 - Correct obvious spelling errors, but flag factual/editorial changes.
-- Never invent missing church contact details or business policy.
+- Never invent contact details, prices, or market policy.
 
 Known unresolved product data:
 
-- Church telephone and email
-- Donate destination
-- Newsletter destination
-- Final events/calendar ownership
-- Form recipients and privacy policy
-- Vendor-management rules and integrations
+- Email provider and the sender address for vendor emails
+- Payment provider for "Continue to payment"
+- When a Saturday reserved after its Monday deadline should be released
+- Full Liability & Indemnification clause text
+- Photos for the slots marked PHOTO NEEDED
+- Privacy and retention policy for vendor documents
 
 ## Bun command policy
 
@@ -177,8 +169,8 @@ Minimum checks:
 
 - Affected route opens without runtime errors.
 - Changed interaction works.
-- Scroll snapping still settles on section boundaries.
-- Cross-route hashes align correctly.
+- Header section links and `/#market-apply` scroll to the right section.
+- Server rules still hold (try the action as the wrong user or with stale data).
 - Desktop review at roughly 1440 × 1000.
 - Mobile review at roughly 390 × 844.
 - No horizontal overflow.

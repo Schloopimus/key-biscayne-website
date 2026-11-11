@@ -1,17 +1,16 @@
-# Key Biscayne Community Church
+# Key Biscayne Farmers Market
 
-Public website for Key Biscayne Community Church, Community School, Mission programs, and Farmers Market.
-
-The five public routes and a local-only Farmers Market operations demo are implemented with Bun, TanStack Start, React, TypeScript, Rsbuild, Drizzle, SQLite, and a custom CSS design system.
+The Key Biscayne Farmers Market site: the public market page, vendor sign-up and application, plaza stall booking, and the market admin. Built with Bun, TanStack Start, React, TypeScript, Rsbuild, Drizzle and SQLite.
 
 ## Run locally
 
 ```bash
 bun install
+cp .env.example .env.local   # then set KBCC_ADMIN_EMAIL and KBCC_ADMIN_PASSWORD
 bun run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). The admin signs in at `/admin/login`.
 
 ## Validate
 
@@ -22,9 +21,8 @@ bun run build
 
 ## Documentation
 
-- [Implemented static site](docs/static-site-implementation.md)
-- [Full website and Farmers Market product analysis](docs/entire-website-analysis.md)
+- [Farmers Market product and code map](docs/farmers-market.md)
 - [Coding-agent contract](AGENTS.md)
 - [Claude instructions](CLAUDE.md)
 
-Public forms persist to the local SQLite demo inbox. The Farmers Market demo now follows the supplied vendor/admin Figma screens and includes local signup/login profiles, vendor applications, certificate uploads, admin review, market-date and stall inventory, accessible stall selection, booking changes/cancellation, and an explicitly simulated payment handoff. Passwords are never stored or checked; email, real authentication, payment processing, R2 storage, spam protection, and deployment remain intentionally unconnected. `.data/` stays local and is gitignored.
+Data stays in the gitignored `.data/` folder. Email delivery and payment processing are not connected yet.

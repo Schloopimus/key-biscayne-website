@@ -1,659 +1,788 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, asc, desc, eq, gte } from 'drizzle-orm'
+import { and, eq, gt, inArray, isNull } from 'drizzle-orm'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 import { getDataDirectory, getDatabase } from './db'
 import * as schema from './db/schema'
-import type { Booking, EventStall, Vendor, VendorApplication } from './db/schema'
+import type { MarketVendor } from './db/schema'
+import {
+  currentVendor,
+  endAllSessions,
+  endSession,
+  hashPassword,
+  hashToken,
+  newToken,
+  requireVendor,
+  startSession,
+  verifyPassword,
+} from './market/auth'
+import {
+  adjustStock,
+  approvalExpired,
+  assertCanReserve,
+  audit,
+  currentReservation,
+  holdCount,
+  iso,
+  isTaken,
+  lateCancellations,
+  newId,
+  now,
+  readSettings,
+  reservationRows,
+  setNotice,
+  settleReservation,
+  sweepDeadlines,
+  takeAddons,
+  unavailableKeys,
+} from './market/core'
+import { sendMarketEmail } from './market/email'
+import { isStallId, stallLabel } from '../market/plaza'
+import {
+  ACTIVE_STATUSES,
+  ALL_CATEGORIES,
+  DOC_KINDS,
+  PLANS,
+  PRICE_RANGES,
+  ackKeys,
+  addWeeks,
+  fmtDay,
+  isActiveStatus,
+  isLate,
+  isMarketDate,
+  isPlan,
+  quote,
+  saturdayOpensAt,
+  stepErrors,
+  upcomingSaturdays,
+  type AckKey,
+  type Addons,
+  type DayStatus,
+  type DocKind,
+  type Plan,
+} from '../market/rules'
 
-export type VendorBookingSummary = {
-  id: string
-  status: Booking['status']
-  paymentStatus: Booking['paymentStatus']
-  priceCents: number
-  reservedAt: string
-  updatedAt: string
-  eventStallId: string
-  eventId: string
-  marketDate: string
-  label: string
-  startTime: string
-  endTime: string
-  stallCode: string
-  tier: EventStall['tier']
+// ---------- Input helpers ----------
+
+const validEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+function issueToken(vendorId: string, purpose: 'set_password' | 'reset_password') {
+  const token = newToken()
+  getDatabase()
+    .insert(schema.marketTokens)
+    .values({ tokenHash: hashToken(token), vendorId, purpose, expiresAt: now() + DAY_MS, usedAt: null, createdAt: iso() })
+    .run()
+  return `/set-password?token=${token}`
 }
 
-export type VendorSnapshot = {
-  vendor: Vendor | null
-  application: VendorApplication | null
-  bookings: Array<VendorBookingSummary>
-}
+// ---------- Sign-up, password and login ----------
 
-export type AvailableStall = {
-  eventId: string
-  marketDate: string
-  label: string
-  startTime: string
-  endTime: string
-  eventStallId: string
-  stallCode: string
-  description: string
-  tier: EventStall['tier']
-  priceCents: number
-  bookingId: string | null
-  bookedVendorId: string | null
-}
-
-export type AvailableMarketEvent = {
-  id: string
-  marketDate: string
-  label: string
-  startTime: string
-  endTime: string
-  stalls: Array<AvailableStall>
-}
-
-function requiredFormField(formData: FormData, name: string, label: string, maximum = 300) {
-  const value = formData.get(name)
-  if (typeof value !== 'string' || value.trim().length === 0) throw new Error(`${label} is required.`)
-  if (value.trim().length > maximum) throw new Error(`${label} is too long.`)
-  return value.trim()
-}
-
-function optionalFormField(formData: FormData, name: string, maximum = 300) {
-  const value = formData.get(name)
-  if (typeof value !== 'string' || value.trim().length === 0) return null
-  if (value.trim().length > maximum) throw new Error(`${name} is too long.`)
-  return value.trim()
-}
-
-function validateEntityId(value: string, prefix: string, label: string) {
-  if (!value.startsWith(prefix) || value.length > 120) throw new Error(`Invalid ${label}.`)
-  return value
-}
-export const createLocalVendorAccount = createServerFn({ method: 'POST' })
-  .validator((formData: FormData) => {
-    const fullName = requiredFormField(formData, 'fullName', 'Full name')
-    const email = requiredFormField(formData, 'email', 'Email address', 320).toLowerCase()
-    const password = requiredFormField(formData, 'password', 'Password', 200)
-    if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Enter a valid email address.')
-    if (password.length < 8) throw new Error('Use at least 8 characters for the demo password.')
-    return { fullName, email }
+export const signUpVendor = createServerFn({ method: 'POST' })
+  .validator((input: Record<string, unknown>) => {
+    const fields = {
+      firstName: typeof input.firstName === 'string' ? input.firstName.trim() : '',
+      lastName: typeof input.lastName === 'string' ? input.lastName.trim() : '',
+      business: typeof input.business === 'string' ? input.business.trim() : '',
+      email: typeof input.email === 'string' ? input.email.trim().toLowerCase() : '',
+      phone: typeof input.phone === 'string' ? input.phone.trim() : '',
+      category: typeof input.category === 'string' ? input.category : '',
+      notes: typeof input.notes === 'string' ? input.notes.trim().slice(0, 1000) : '',
+    }
+    const missing = (
+      [
+        ['firstName', 'first name'],
+        ['lastName', 'last name'],
+        ['business', 'business or farm name'],
+        ['email', 'email'],
+        ['phone', 'telephone'],
+        ['category', 'category'],
+      ] as const
+    )
+      .filter(([k]) => !fields[k])
+      .map(([, label]) => label)
+    if (missing.length) throw new Error(`Please add your ${missing.join(', ')}.`)
+    if (!validEmail(fields.email)) throw new Error('Please enter a valid email address.')
+    if (!ALL_CATEGORIES.includes(fields.category)) throw new Error('Please add your category.')
+    for (const k of ['firstName', 'lastName', 'business', 'phone'] as const) {
+      if (fields[k].length > 200) throw new Error('One of your answers is too long.')
+    }
+    return fields
   })
   .handler(async ({ data }) => {
     const database = getDatabase()
-    const existing = database.select().from(schema.vendors).where(eq(schema.vendors.email, data.email)).get()
-    if (existing) throw new Error('A local vendor profile already uses this email. Log in instead.')
-
-    const vendorId = `vendor-${crypto.randomUUID()}`
-    const now = new Date().toISOString()
+    const existing = database.select({ id: schema.marketVendors.id }).from(schema.marketVendors).where(eq(schema.marketVendors.email, data.email)).get()
+    if (existing) throw new Error('An account already uses this email. Log in instead.')
+    const id = newId('vendor')
     database
-      .insert(schema.vendors)
-      .values({
-        id: vendorId,
-        email: data.email,
-        contactName: data.fullName,
-        createdAt: now,
-        updatedAt: now,
-      })
+      .insert(schema.marketVendors)
+      .values({ id, ...data, status: 'in_progress', createdAt: iso(), updatedAt: iso() })
       .run()
-    return { vendorId }
+    audit(database, 'vendor', id, 'vendor.signed-up', id, `${data.business} joined the market.`)
+    const link = issueToken(id, 'set_password')
+    const delivery = sendMarketEmail({ to: data.email, subject: 'Set your Farmers Market password', link })
+    return { email: data.email, link: delivery.delivered ? null : link }
   })
 
-export const loginLocalVendorAccount = createServerFn({ method: 'POST' })
-  .validator((formData: FormData) => {
-    const email = requiredFormField(formData, 'email', 'Email address', 320).toLowerCase()
-    requiredFormField(formData, 'password', 'Password', 200)
-    if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Enter a valid email address.')
-    return { email }
-  })
+export const readPasswordToken = createServerFn({ method: 'GET' })
+  .validator((input: { token: string }) => ({ token: typeof input.token === 'string' ? input.token.slice(0, 200) : '' }))
   .handler(async ({ data }) => {
-    const vendor = getDatabase().select().from(schema.vendors).where(eq(schema.vendors.email, data.email)).get()
-    if (!vendor) throw new Error('No local vendor profile uses this email. Create an account first.')
-    return { vendorId: vendor.id }
-  })
-
-
-export const submitVendorApplication = createServerFn({ method: 'POST' })
-  .validator((formData: FormData) => {
-    const email = requiredFormField(formData, 'email', 'Email address', 320)
-    if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error('Enter a valid email address.')
-
-    const certificate = formData.get('certificate')
-    if (!(certificate instanceof File) || certificate.size === 0) {
-      throw new Error('Upload a health department certificate.')
-    }
-    if (certificate.size > 5 * 1024 * 1024) throw new Error('The certificate must be 5 MB or smaller.')
-
-    return {
-      vendorId: optionalFormField(formData, 'vendorId', 120),
-      businessName: requiredFormField(formData, 'businessName', 'Business name'),
-      productCategory: requiredFormField(formData, 'productCategory', 'Product category'),
-      contactName: requiredFormField(formData, 'contactName', 'Contact name'),
-      email: email.toLowerCase(),
-      phone: requiredFormField(formData, 'phone', 'Phone number', 60),
-      details: requiredFormField(formData, 'details', 'Business details', 2_000),
-      certificate,
-    }
-  })
-  .handler(async ({ data }) => {
-    
-
     const database = getDatabase()
-    const now = new Date().toISOString()
-    const existingVendor = data.vendorId
-      ? database.select().from(schema.vendors).where(eq(schema.vendors.id, data.vendorId)).get()
-      : database.select().from(schema.vendors).where(eq(schema.vendors.email, data.email)).get()
-
-    if (data.vendorId && !existingVendor) {
-      throw new Error('This local vendor profile no longer exists. Start a new demo profile.')
-    }
-
-    const vendorId = existingVendor?.id ?? `vendor-${crypto.randomUUID()}`
-    const latestApplication = existingVendor
-      ? database
-          .select()
-          .from(schema.vendorApplications)
-          .where(eq(schema.vendorApplications.vendorId, vendorId))
-          .orderBy(desc(schema.vendorApplications.revision))
-          .limit(1)
-          .get()
-      : null
-
-    if (latestApplication?.status === 'pending') throw new Error('This application is already pending review.')
-    if (latestApplication?.status === 'approved') throw new Error('This vendor is already approved.')
-
-    const applicationId = `application-${crypto.randomUUID()}`
-    const fileBytes = new Uint8Array(await data.certificate.arrayBuffer())
-    const isPdf = fileBytes.length >= 5 && new TextDecoder().decode(fileBytes.slice(0, 5)) === '%PDF-'
-    const isPng =
-      fileBytes.length >= 8 &&
-      [137, 80, 78, 71, 13, 10, 26, 10].every((byte, index) => fileBytes[index] === byte)
-    const isJpeg = fileBytes.length >= 3 && fileBytes[0] === 255 && fileBytes[1] === 216 && fileBytes[2] === 255
-
-    if (!isPdf && !isPng && !isJpeg) {
-      throw new Error('Upload a valid PDF, PNG, or JPEG certificate.')
-    }
-
-    const extension = isPdf ? 'pdf' : isPng ? 'png' : 'jpg'
-    const certificateMime = isPdf ? 'application/pdf' : isPng ? 'image/png' : 'image/jpeg'
-    const certificateStoredName = `${applicationId}.${extension}`
-    const certificateDirectory = resolve(getDataDirectory(), 'certificates')
-    const certificatePath = resolve(certificateDirectory, certificateStoredName)
-    await mkdir(certificateDirectory, { recursive: true })
-    await writeFile(certificatePath, fileBytes)
-
-    try {
-      database.transaction((transaction) => {
-        if (existingVendor) {
-          transaction
-            .update(schema.vendors)
-            .set({ email: data.email, contactName: data.contactName, updatedAt: now })
-            .where(eq(schema.vendors.id, vendorId))
-            .run()
-        } else {
-          transaction
-            .insert(schema.vendors)
-            .values({
-              id: vendorId,
-              email: data.email,
-              contactName: data.contactName,
-              createdAt: now,
-              updatedAt: now,
-            })
-            .run()
-        }
-
-        transaction
-          .insert(schema.vendorApplications)
-          .values({
-            id: applicationId,
-            vendorId,
-            revision: (latestApplication?.revision ?? 0) + 1,
-            status: 'pending',
-            businessName: data.businessName,
-            productCategory: data.productCategory,
-            contactName: data.contactName,
-            email: data.email,
-            phone: data.phone,
-            details: data.details,
-            certificateFileName: basename(data.certificate.name).slice(0, 240) || `certificate.${extension}`,
-            certificateStoredName,
-            certificateMime,
-            certificateSize: data.certificate.size,
-            rejectionReason: null,
-            submittedAt: now,
-            reviewedAt: null,
-          })
-          .run()
-
-        transaction
-          .insert(schema.auditLogs)
-          .values({
-            id: `audit-${crypto.randomUUID()}`,
-            actorKind: 'local-vendor',
-            actorId: vendorId,
-            action: latestApplication ? 'application.reapplied' : 'application.submitted',
-            entityType: 'vendor-application',
-            entityId: applicationId,
-            summary: `${data.businessName} submitted application revision ${(latestApplication?.revision ?? 0) + 1}.`,
-            createdAt: now,
-          })
-          .run()
-      })
-    } catch (error) {
-      await rm(certificatePath, { force: true })
-      throw error
-    }
-
-    return { vendorId, applicationId }
-  })
-
-export const getVendorSnapshot = createServerFn({ method: 'GET' })
-  .validator((data: { vendorId: string | null }) => data)
-  .handler(async ({ data }): Promise<VendorSnapshot> => {
-    if (!data.vendorId) return { vendor: null, application: null, bookings: [] }
-
-    
-    const database = getDatabase()
-    const vendor = database.select().from(schema.vendors).where(eq(schema.vendors.id, data.vendorId)).get()
-    if (!vendor) return { vendor: null, application: null, bookings: [] }
-
-    const application = database
+    const token = database
       .select()
-      .from(schema.vendorApplications)
-      .where(eq(schema.vendorApplications.vendorId, vendor.id))
-      .orderBy(desc(schema.vendorApplications.revision))
-      .limit(1)
+      .from(schema.marketTokens)
+      .where(and(eq(schema.marketTokens.tokenHash, hashToken(data.token)), isNull(schema.marketTokens.usedAt), gt(schema.marketTokens.expiresAt, now())))
       .get()
-
-    const vendorBookings = database
-      .select({
-        id: schema.bookings.id,
-        status: schema.bookings.status,
-        paymentStatus: schema.bookings.paymentStatus,
-        priceCents: schema.bookings.priceCents,
-        reservedAt: schema.bookings.reservedAt,
-        updatedAt: schema.bookings.updatedAt,
-        eventStallId: schema.eventStalls.id,
-        eventId: schema.marketEvents.id,
-        marketDate: schema.marketEvents.marketDate,
-        label: schema.marketEvents.label,
-        startTime: schema.marketEvents.startTime,
-        endTime: schema.marketEvents.endTime,
-        stallCode: schema.stalls.code,
-        tier: schema.eventStalls.tier,
-      })
-      .from(schema.bookings)
-      .innerJoin(schema.eventStalls, eq(schema.bookings.eventStallId, schema.eventStalls.id))
-      .innerJoin(schema.stalls, eq(schema.eventStalls.stallId, schema.stalls.id))
-      .innerJoin(schema.marketEvents, eq(schema.eventStalls.eventId, schema.marketEvents.id))
-      .where(eq(schema.bookings.vendorId, vendor.id))
-      .orderBy(desc(schema.marketEvents.marketDate))
-      .all()
-
-    return { vendor, application: application ?? null, bookings: vendorBookings }
+    if (!token) return { valid: false as const, firstName: '' }
+    const vendor = database.select({ firstName: schema.marketVendors.firstName }).from(schema.marketVendors).where(eq(schema.marketVendors.id, token.vendorId)).get()
+    return { valid: !!vendor, firstName: vendor?.firstName ?? '' }
   })
 
-export const getAvailableStalls = createServerFn({ method: 'GET' })
-  .validator((data: { vendorId: string }) => ({
-    vendorId: validateEntityId(data.vendorId, 'vendor-', 'vendor'),
-  }))
-  .handler(async ({ data }): Promise<Array<AvailableMarketEvent>> => {
-    
-    const database = getDatabase()
-    const application = database
-      .select()
-      .from(schema.vendorApplications)
-      .where(eq(schema.vendorApplications.vendorId, data.vendorId))
-      .orderBy(desc(schema.vendorApplications.revision))
-      .limit(1)
-      .get()
-
-    if (application?.status !== 'approved') throw new Error('The vendor application must be approved first.')
-
-    const rows = database
-      .select({
-        eventId: schema.marketEvents.id,
-        marketDate: schema.marketEvents.marketDate,
-        label: schema.marketEvents.label,
-        startTime: schema.marketEvents.startTime,
-        endTime: schema.marketEvents.endTime,
-        eventStallId: schema.eventStalls.id,
-        stallCode: schema.stalls.code,
-        description: schema.stalls.description,
-        tier: schema.eventStalls.tier,
-        priceCents: schema.eventStalls.priceCents,
-        bookingId: schema.bookings.id,
-        bookedVendorId: schema.bookings.vendorId,
-      })
-      .from(schema.eventStalls)
-      .innerJoin(schema.marketEvents, eq(schema.eventStalls.eventId, schema.marketEvents.id))
-      .innerJoin(schema.stalls, eq(schema.eventStalls.stallId, schema.stalls.id))
-      .leftJoin(
-        schema.bookings,
-        and(eq(schema.bookings.eventStallId, schema.eventStalls.id), eq(schema.bookings.status, 'reserved')),
-      )
-      .where(
-        and(
-          eq(schema.marketEvents.status, 'open'),
-          gte(schema.marketEvents.marketDate, new Date().toISOString().slice(0, 10)),
-          eq(schema.eventStalls.active, true),
-          eq(schema.stalls.active, true),
-        ),
-      )
-      .orderBy(asc(schema.marketEvents.marketDate), asc(schema.stalls.code))
-      .all()
-
-    const events = new Map<string, AvailableMarketEvent>()
-
-    for (const row of rows) {
-      const event = events.get(row.eventId) ?? {
-        id: row.eventId,
-        marketDate: row.marketDate,
-        label: row.label,
-        startTime: row.startTime,
-        endTime: row.endTime,
-        stalls: [],
-      }
-      event.stalls.push(row)
-      events.set(row.eventId, event)
-    }
-
-    return [...events.values()]
+export const setVendorPassword = createServerFn({ method: 'POST' })
+  .validator((input: { token: string; password: string; confirm: string }) => {
+    if (typeof input.password !== 'string' || input.password.length < 8) throw new Error('Use at least 8 characters.')
+    if (input.password !== input.confirm) throw new Error("The passwords don't match.")
+    if (input.password.length > 200) throw new Error('Use a shorter password.')
+    return { token: String(input.token ?? '').slice(0, 200), password: input.password }
   })
-
-export const createLocalBooking = createServerFn({ method: 'POST' })
-  .validator((data: { vendorId: string; eventStallId: string }) => ({
-    vendorId: validateEntityId(data.vendorId, 'vendor-', 'vendor'),
-    eventStallId: validateEntityId(data.eventStallId, 'market-', 'stall selection'),
-  }))
-  .handler(async ({ data }) => {
-    
-    const database = getDatabase()
-    const now = new Date().toISOString()
-    const bookingId = `booking-${crypto.randomUUID()}`
-
-    try {
-      database.transaction((transaction) => {
-        const application = transaction
-          .select()
-          .from(schema.vendorApplications)
-          .where(eq(schema.vendorApplications.vendorId, data.vendorId))
-          .orderBy(desc(schema.vendorApplications.revision))
-          .limit(1)
-          .get()
-        if (application?.status !== 'approved') throw new Error('The vendor application must be approved first.')
-
-        const target = transaction
-          .select({
-            eventStallId: schema.eventStalls.id,
-            eventId: schema.marketEvents.id,
-            marketDate: schema.marketEvents.marketDate,
-            eventStatus: schema.marketEvents.status,
-            eventStallActive: schema.eventStalls.active,
-            stallActive: schema.stalls.active,
-            priceCents: schema.eventStalls.priceCents,
-            stallCode: schema.stalls.code,
-          })
-          .from(schema.eventStalls)
-          .innerJoin(schema.marketEvents, eq(schema.eventStalls.eventId, schema.marketEvents.id))
-          .innerJoin(schema.stalls, eq(schema.eventStalls.stallId, schema.stalls.id))
-          .where(eq(schema.eventStalls.id, data.eventStallId))
-          .get()
-
-        if (!target || target.eventStatus !== 'open' || !target.eventStallActive || !target.stallActive) {
-          throw new Error('This stall is not available.')
-        }
-
-        const existingBooking = transaction
-          .select({ id: schema.bookings.id })
-          .from(schema.bookings)
-          .innerJoin(schema.eventStalls, eq(schema.bookings.eventStallId, schema.eventStalls.id))
-          .where(
-            and(
-              eq(schema.bookings.vendorId, data.vendorId),
-              eq(schema.bookings.status, 'reserved'),
-              eq(schema.eventStalls.eventId, target.eventId),
-            ),
-          )
-          .get()
-        if (existingBooking) throw new Error('This vendor already has a stall reserved for that market date.')
-
-        transaction
-          .insert(schema.bookings)
-          .values({
-            id: bookingId,
-            vendorId: data.vendorId,
-            eventStallId: data.eventStallId,
-            status: 'reserved',
-            paymentStatus: 'pending',
-            priceCents: target.priceCents,
-            reservedAt: now,
-            updatedAt: now,
-          })
-          .run()
-        transaction
-          .insert(schema.auditLogs)
-          .values({
-            id: `audit-${crypto.randomUUID()}`,
-            actorKind: 'local-vendor',
-            actorId: data.vendorId,
-            action: 'booking.created',
-            entityType: 'booking',
-            entityId: bookingId,
-            summary: `Reserved stall ${target.stallCode} for ${target.marketDate}. Payment is not connected.`,
-            createdAt: now,
-          })
-          .run()
-      })
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
-        throw new Error('That stall was just reserved. Choose another available stall.')
-      }
-      throw error
-    }
-
-    return { bookingId }
-  })
-export type LocalCheckout = {
-  bookingId: string
-  paymentStatus: Booking['paymentStatus']
-  priceCents: number
-  stallCode: string
-  tier: EventStall['tier']
-  marketDate: string
-}
-
-export const getLocalCheckout = createServerFn({ method: 'GET' })
-  .validator((data: { vendorId: string; bookingId: string }) => ({
-    vendorId: validateEntityId(data.vendorId, 'vendor-', 'vendor'),
-    bookingId: validateEntityId(data.bookingId, 'booking-', 'booking'),
-  }))
-  .handler(async ({ data }): Promise<LocalCheckout> => {
-    const checkout = getDatabase()
-      .select({
-        bookingId: schema.bookings.id,
-        paymentStatus: schema.bookings.paymentStatus,
-        priceCents: schema.bookings.priceCents,
-        stallCode: schema.stalls.code,
-        tier: schema.eventStalls.tier,
-        marketDate: schema.marketEvents.marketDate,
-      })
-      .from(schema.bookings)
-      .innerJoin(schema.eventStalls, eq(schema.bookings.eventStallId, schema.eventStalls.id))
-      .innerJoin(schema.stalls, eq(schema.eventStalls.stallId, schema.stalls.id))
-      .innerJoin(schema.marketEvents, eq(schema.eventStalls.eventId, schema.marketEvents.id))
-      .where(
-        and(
-          eq(schema.bookings.id, data.bookingId),
-          eq(schema.bookings.vendorId, data.vendorId),
-          eq(schema.bookings.status, 'reserved'),
-        ),
-      )
-      .get()
-    if (!checkout) throw new Error('Active booking not found.')
-    return checkout
-  })
-
-export const completeLocalPayment = createServerFn({ method: 'POST' })
-  .validator((data: { vendorId: string; bookingId: string }) => ({
-    vendorId: validateEntityId(data.vendorId, 'vendor-', 'vendor'),
-    bookingId: validateEntityId(data.bookingId, 'booking-', 'booking'),
-  }))
   .handler(async ({ data }) => {
     const database = getDatabase()
-    const booking = database
+    const token = database
       .select()
-      .from(schema.bookings)
-      .where(
-        and(
-          eq(schema.bookings.id, data.bookingId),
-          eq(schema.bookings.vendorId, data.vendorId),
-          eq(schema.bookings.status, 'reserved'),
-        ),
-      )
+      .from(schema.marketTokens)
+      .where(and(eq(schema.marketTokens.tokenHash, hashToken(data.token)), isNull(schema.marketTokens.usedAt), gt(schema.marketTokens.expiresAt, now())))
       .get()
-    if (!booking) throw new Error('Active booking not found.')
-    if (booking.paymentStatus === 'complete') return { bookingId: booking.id }
-
-    const now = new Date().toISOString()
-    database.transaction((transaction) => {
-      transaction
-        .update(schema.bookings)
-        .set({ paymentStatus: 'complete', updatedAt: now })
-        .where(eq(schema.bookings.id, booking.id))
-        .run()
-      transaction
-        .insert(schema.auditLogs)
-        .values({
-          id: `audit-${crypto.randomUUID()}`,
-          actorKind: 'local-vendor',
-          actorId: data.vendorId,
-          action: 'booking.payment-demo-completed',
-          entityType: 'booking',
-          entityId: booking.id,
-          summary: 'Marked the booking payment complete in the local UI demo. No payment provider was called.',
-          createdAt: now,
+    if (!token) throw new Error('This link has expired. Ask for a new one from the login page.')
+    const firstTime = token.purpose === 'set_password'
+    database.transaction((tx) => {
+      tx.update(schema.marketTokens).set({ usedAt: now() }).where(eq(schema.marketTokens.tokenHash, token.tokenHash)).run()
+      tx.update(schema.marketVendors)
+        .set({
+          passwordHash: hashPassword(data.password),
+          updatedAt: iso(),
+          ...(firstTime ? { notice: 'Welcome! Finish your application to start booking.' } : {}),
         })
+        .where(eq(schema.marketVendors.id, token.vendorId))
         .run()
     })
-    return { bookingId: booking.id }
+    endAllSessions('vendor', token.vendorId)
+    startSession('vendor', token.vendorId)
+    return { ok: true }
   })
 
-
-export const changeLocalBooking = createServerFn({ method: 'POST' })
-  .validator((data: { vendorId: string; bookingId: string; eventStallId: string }) => ({
-    vendorId: validateEntityId(data.vendorId, 'vendor-', 'vendor'),
-    bookingId: validateEntityId(data.bookingId, 'booking-', 'booking'),
-    eventStallId: validateEntityId(data.eventStallId, 'market-', 'stall selection'),
+export const logInVendor = createServerFn({ method: 'POST' })
+  .validator((input: { email: string; password: string }) => ({
+    email: String(input.email ?? '').trim().toLowerCase().slice(0, 320),
+    password: String(input.password ?? '').slice(0, 200),
   }))
   .handler(async ({ data }) => {
-    
-    const database = getDatabase()
-    const now = new Date().toISOString()
+    const vendor = getDatabase().select().from(schema.marketVendors).where(eq(schema.marketVendors.email, data.email)).get()
+    if (!vendor || !verifyPassword(data.password, vendor.passwordHash)) throw new Error('That email and password don’t match a vendor account.')
+    startSession('vendor', vendor.id)
+    return { ok: true }
+  })
 
-    try {
-      database.transaction((transaction) => {
-        const current = transaction
-          .select({ eventId: schema.eventStalls.eventId })
-          .from(schema.bookings)
-          .innerJoin(schema.eventStalls, eq(schema.bookings.eventStallId, schema.eventStalls.id))
-          .where(
-            and(
-              eq(schema.bookings.id, data.bookingId),
-              eq(schema.bookings.vendorId, data.vendorId),
-              eq(schema.bookings.status, 'reserved'),
-            ),
-          )
-          .get()
-        if (!current) throw new Error('Active booking not found.')
+export const logOutVendor = createServerFn({ method: 'POST' }).handler(async () => {
+  endSession('vendor')
+  return { ok: true }
+})
 
-        const target = transaction
-          .select({
-            eventId: schema.eventStalls.eventId,
-            priceCents: schema.eventStalls.priceCents,
-            stallCode: schema.stalls.code,
-            active: schema.eventStalls.active,
-          })
-          .from(schema.eventStalls)
-          .innerJoin(schema.stalls, eq(schema.eventStalls.stallId, schema.stalls.id))
-          .where(eq(schema.eventStalls.id, data.eventStallId))
-          .get()
-        if (!target || !target.active || target.eventId !== current.eventId) {
-          throw new Error('Choose an available stall from the same market date.')
+// ---------- Session summary for the header and public page ----------
+
+export const getVendorSession = createServerFn({ method: 'GET' }).handler(async () => {
+  const vendor = currentVendor()
+  if (!vendor) return null
+  return { name: `${vendor.firstName} ${vendor.lastName}`.trim(), email: vendor.email }
+})
+
+export const getPublicMarket = createServerFn({ method: 'GET' }).handler(async () => {
+  const { prices } = readSettings(getDatabase())
+  const vendor = currentVendor()
+  return {
+    prices,
+    session: vendor ? { name: `${vendor.firstName} ${vendor.lastName}`.trim(), email: vendor.email } : null,
+  }
+})
+
+// ---------- Vendor dashboard ----------
+
+export type DashboardRow = { id: string; date: string; stallId: number; status: DayStatus }
+
+function documentNames(vendorId: string) {
+  const docs = getDatabase().select().from(schema.marketDocuments).where(eq(schema.marketDocuments.vendorId, vendorId)).all()
+  const out: Partial<Record<DocKind, string>> = {}
+  for (const doc of docs) out[doc.kind] = doc.fileName
+  return out
+}
+
+function parseAcks(json: string): Array<AckKey> {
+  try {
+    const value = JSON.parse(json) as unknown
+    return Array.isArray(value) ? (value.filter((k) => ['setup', 'conduct', 'liability', 'food'].includes(k)) as Array<AckKey>) : []
+  } catch {
+    return []
+  }
+}
+
+function profile(vendor: MarketVendor) {
+  return {
+    firstName: vendor.firstName,
+    lastName: vendor.lastName,
+    name: `${vendor.firstName} ${vendor.lastName}`.trim(),
+    business: vendor.business,
+    email: vendor.email,
+    phone: vendor.phone,
+    category: vendor.category,
+    notes: vendor.notes,
+    status: vendor.status,
+    expired: approvalExpired(vendor),
+    approvedUntil: vendor.approvedUntil,
+    detailsDone: vendor.detailsDone,
+    documentsDone: vendor.documentsDone,
+    address: vendor.address,
+    website: vendor.website,
+    products: vendor.products,
+    priceRange: vendor.priceRange,
+    targetMarket: vendor.targetMarket,
+    insuranceProvider: vendor.insuranceProvider,
+    policyNumber: vendor.policyNumber,
+    acks: parseAcks(vendor.acksJson),
+    docs: documentNames(vendor.id),
+  }
+}
+
+export type VendorProfile = ReturnType<typeof profile>
+
+export const getVendorDashboard = createServerFn({ method: 'GET' }).handler(async () => {
+  const database = getDatabase()
+  sweepDeadlines(database)
+  const vendor = requireVendor()
+  const reservation = currentReservation(database, vendor.id)
+  const rows: Array<DashboardRow> = reservation
+    ? reservationRows(database, reservation.id).map((r) => ({ id: r.id, date: r.marketDate, stallId: r.stallId, status: r.status }))
+    : []
+  return {
+    me: profile(vendor),
+    notice: vendor.notice,
+    spaceLost: vendor.spaceLost,
+    holds: holdCount(database, vendor.id),
+    lateCancellations: lateCancellations(database, vendor.id),
+    now: now(),
+    booking: reservation
+      ? {
+          plan: reservation.plan,
+          stallId: reservation.stallId,
+          perSaturday: reservation.perSaturday,
+          summary: quote({ weekly: '0', seasonal: '0', tent: '0', table: '0', electricity: '' }, reservation.plan, reservation, reservation.otherExtras).summary,
+          rows,
         }
+      : null,
+  }
+})
 
-        transaction
-          .update(schema.bookings)
-          .set({ eventStallId: data.eventStallId, priceCents: target.priceCents, updatedAt: now })
-          .where(eq(schema.bookings.id, data.bookingId))
-          .run()
-        transaction
-          .insert(schema.auditLogs)
-          .values({
-            id: `audit-${crypto.randomUUID()}`,
-            actorKind: 'local-vendor',
-            actorId: data.vendorId,
-            action: 'booking.changed',
-            entityType: 'booking',
-            entityId: data.bookingId,
-            summary: `Changed local reservation to stall ${target.stallCode}.`,
-            createdAt: now,
-          })
-          .run()
-      })
-    } catch (error) {
-      if (error instanceof Error && error.message.includes('UNIQUE constraint failed')) {
-        throw new Error('That stall was just reserved. Choose another available stall.')
+export type VendorDashboard = Awaited<ReturnType<typeof getVendorDashboard>>
+
+export const getVendorProfile = createServerFn({ method: 'GET' }).handler(async () => {
+  const vendor = requireVendor()
+  return { me: profile(vendor) }
+})
+
+export const dismissNotice = createServerFn({ method: 'POST' }).handler(async () => {
+  const vendor = requireVendor()
+  setNotice(getDatabase(), vendor.id, '')
+  return { ok: true }
+})
+
+// ---------- Application ----------
+
+type StepInput = {
+  step: 1 | 2 | 3
+  advance: boolean
+  category?: string
+  address?: string
+  website?: string
+  products?: string
+  priceRange?: string
+  targetMarket?: string
+  insuranceProvider?: string
+  policyNumber?: string
+  acks?: Array<string>
+}
+
+export const saveApplication = createServerFn({ method: 'POST' })
+  .validator((input: StepInput) => {
+    if (![1, 2, 3].includes(input.step)) throw new Error('Unknown application step.')
+    const out: StepInput = { step: input.step, advance: !!input.advance }
+    const clip = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : undefined)
+    out.category = typeof input.category === 'string' && (input.category === '' || ALL_CATEGORIES.includes(input.category)) ? input.category : undefined
+    out.address = clip(input.address, 300)
+    out.website = clip(input.website, 300)
+    out.products = clip(input.products, 2000)
+    out.priceRange = typeof input.priceRange === 'string' && (input.priceRange === '' || PRICE_RANGES.includes(input.priceRange)) ? input.priceRange : undefined
+    out.targetMarket = clip(input.targetMarket, 300)
+    out.insuranceProvider = clip(input.insuranceProvider, 200)
+    out.policyNumber = clip(input.policyNumber, 100)
+    out.acks = Array.isArray(input.acks) ? input.acks.filter((k) => typeof k === 'string').slice(0, 4) : undefined
+    return out
+  })
+  .handler(async ({ data }) => {
+    const database = getDatabase()
+    const vendor = requireVendor()
+    if (vendor.status !== 'in_progress' && vendor.status !== 'rejected') throw new Error('Your application has already been submitted.')
+    const patch: Partial<MarketVendor> = { updatedAt: iso() }
+    if (data.step === 1) {
+      if (data.category !== undefined && data.category !== '') patch.category = data.category
+      for (const k of ['address', 'website', 'products', 'priceRange', 'targetMarket'] as const) {
+        if (data[k] !== undefined) patch[k] = data[k]
       }
-      throw error
     }
+    if (data.step === 2) {
+      if (data.insuranceProvider !== undefined) patch.insuranceProvider = data.insuranceProvider
+      if (data.policyNumber !== undefined) patch.policyNumber = data.policyNumber
+    }
+    if (data.step === 3 && data.acks) patch.acksJson = JSON.stringify(data.acks)
 
-    return { bookingId: data.bookingId }
+    const merged = { ...vendor, ...patch }
+    if (data.advance) {
+      const errors = stepErrors(data.step, {
+        category: data.step === 1 ? data.category ?? '' : merged.category,
+        address: merged.address,
+        website: merged.website,
+        products: merged.products,
+        insuranceProvider: merged.insuranceProvider,
+        policyNumber: merged.policyNumber,
+        docs: documentNames(vendor.id),
+        acks: parseAcks(merged.acksJson),
+      })
+      if (errors.length) {
+        database.update(schema.marketVendors).set(patch).where(eq(schema.marketVendors.id, vendor.id)).run()
+        return { errors }
+      }
+      if (data.step === 1) patch.detailsDone = true
+      if (data.step === 2) patch.documentsDone = true
+      if (data.step === 3) {
+        // Agreements depend on the category, so they are kept only for the sections this vendor saw.
+        patch.acksJson = JSON.stringify(ackKeys(merged.category))
+        patch.status = 'pending'
+        patch.submittedAt = iso()
+        patch.notice = "Application submitted. We'll email you once it's reviewed."
+      }
+    } else {
+      patch.notice = 'Your progress is saved. Finish your application any time.'
+    }
+    database.update(schema.marketVendors).set(patch).where(eq(schema.marketVendors.id, vendor.id)).run()
+    if (data.advance && data.step === 3) audit(database, 'vendor', vendor.id, 'application.submitted', vendor.id, `${vendor.business} submitted their application.`)
+    return { errors: [] as Array<string> }
   })
 
-export const cancelLocalBooking = createServerFn({ method: 'POST' })
-  .validator((data: { vendorId: string; bookingId: string }) => ({
-    vendorId: validateEntityId(data.vendorId, 'vendor-', 'vendor'),
-    bookingId: validateEntityId(data.bookingId, 'booking-', 'booking'),
+function sniffUpload(bytes: Uint8Array) {
+  const starts = (sig: Array<number>, offset = 0) => sig.every((b, i) => bytes[offset + i] === b)
+  if (starts([0x25, 0x50, 0x44, 0x46, 0x2d])) return { ext: 'pdf', mime: 'application/pdf' }
+  if (starts([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return { ext: 'png', mime: 'image/png' }
+  if (starts([0xff, 0xd8, 0xff])) return { ext: 'jpg', mime: 'image/jpeg' }
+  if (starts([0x52, 0x49, 0x46, 0x46]) && starts([0x57, 0x45, 0x42, 0x50], 8)) return { ext: 'webp', mime: 'image/webp' }
+  if (starts([0x66, 0x74, 0x79, 0x70], 4) && /heic|heix|mif1/.test(new TextDecoder().decode(bytes.slice(8, 12)))) return { ext: 'heic', mime: 'image/heic' }
+  return null
+}
+
+export const uploadDocument = createServerFn({ method: 'POST' })
+  .validator((formData: FormData) => {
+    const kind = formData.get('kind')
+    const file = formData.get('file')
+    if (typeof kind !== 'string' || !DOC_KINDS.includes(kind as DocKind)) throw new Error('Unknown document.')
+    if (!(file instanceof File) || file.size === 0) throw new Error('Choose a file to upload.')
+    if (file.size > 10 * 1024 * 1024) throw new Error('Files must be 10 MB or smaller.')
+    return { kind: kind as DocKind, file }
+  })
+  .handler(async ({ data }) => {
+    const database = getDatabase()
+    const vendor = requireVendor()
+    if (vendor.status !== 'in_progress' && vendor.status !== 'rejected') throw new Error('Your application has already been submitted.')
+    const bytes = new Uint8Array(await data.file.arrayBuffer())
+    const type = sniffUpload(bytes)
+    if (!type) throw new Error('Upload a PDF or an image file.')
+    const directory = resolve(getDataDirectory(), 'market-documents', vendor.id)
+    await mkdir(directory, { recursive: true })
+    const storedName = `${data.kind}-${crypto.randomUUID()}.${type.ext}`
+    await writeFile(resolve(directory, storedName), bytes)
+    const previous = database
+      .select()
+      .from(schema.marketDocuments)
+      .where(and(eq(schema.marketDocuments.vendorId, vendor.id), eq(schema.marketDocuments.kind, data.kind)))
+      .get()
+    const fileName = basename(data.file.name).slice(0, 200) || `${data.kind}.${type.ext}`
+    database
+      .insert(schema.marketDocuments)
+      .values({ id: newId('doc'), vendorId: vendor.id, kind: data.kind, fileName, storedName, mime: type.mime, size: data.file.size, uploadedAt: iso() })
+      .onConflictDoUpdate({
+        target: [schema.marketDocuments.vendorId, schema.marketDocuments.kind],
+        set: { fileName, storedName, mime: type.mime, size: data.file.size, uploadedAt: iso() },
+      })
+      .run()
+    if (previous) await rm(resolve(directory, previous.storedName), { force: true })
+    return { kind: data.kind, fileName }
+  })
+
+// ---------- Plaza map ----------
+
+type MapMode = { rebook?: string; append?: string; change?: boolean }
+
+export const getMapData = createServerFn({ method: 'GET' })
+  .validator((input: MapMode) => ({
+    rebook: typeof input.rebook === 'string' ? input.rebook.slice(0, 120) : undefined,
+    append: isMarketDate(input.append) ? input.append : undefined,
+    change: !!input.change,
   }))
   .handler(async ({ data }) => {
-    
     const database = getDatabase()
-    const now = new Date().toISOString()
-    const activeBooking = database
-      .select({ id: schema.bookings.id })
-      .from(schema.bookings)
-      .where(
-        and(
-          eq(schema.bookings.id, data.bookingId),
-          eq(schema.bookings.vendorId, data.vendorId),
-          eq(schema.bookings.status, 'reserved'),
-        ),
-      )
-      .get()
-    if (!activeBooking) throw new Error('Active booking not found.')
+    sweepDeadlines(database)
+    const vendor = requireVendor()
+    assertCanReserve(database, vendor)
+    const { prices, stock } = readSettings(database)
+    const saturdays = upcomingSaturdays(5)
+    const reservation = currentReservation(database, vendor.id)
+    let fixedDate: string | null = null
+    if (data.rebook || data.append) {
+      if (!reservation) throw new Error('You have no reservation to add a Saturday to.')
+      if (data.rebook) {
+        const row = database.select().from(schema.marketBookings).where(and(eq(schema.marketBookings.id, data.rebook), eq(schema.marketBookings.reservationId, reservation.id))).get()
+        if (!row || isActiveStatus(row.status) || now() >= saturdayOpensAt(row.marketDate)) throw new Error('That Saturday can no longer be booked again.')
+        fixedDate = row.marketDate
+      } else fixedDate = data.append ?? null
+    }
+    if (data.change) {
+      const rows = reservation ? reservationRows(database, reservation.id) : []
+      if (!reservation || rows.some((r) => r.status === 'paid' || r.status === 'confirming') || !rows.some((r) => isActiveStatus(r.status))) {
+        throw new Error('This reservation can no longer change stalls.')
+      }
+    }
+    const dates = fixedDate ? [fixedDate] : Array.from({ length: PLANS.seasonal.saturdays + saturdays.length }, (_, i) => addWeeks(saturdays[0]!, i))
+    const taken = unavailableKeys(database, dates, data.change && reservation ? { reservationId: reservation.id } : undefined)
+    return { prices, stock, saturdays, fixedDate, taken: [...taken] }
+  })
 
-    database
-      .update(schema.bookings)
-      .set({ status: 'cancelled', updatedAt: now })
-      .where(eq(schema.bookings.id, data.bookingId))
-      .run()
+export type MapData = Awaited<ReturnType<typeof getMapData>>
 
-    database
-      .insert(schema.auditLogs)
+function selectionDates(plan: Plan, first: string) {
+  return Array.from({ length: PLANS[plan].saturdays }, (_, i) => addWeeks(first, i))
+}
+
+type ReserveInput = {
+  plan: Plan
+  first: string
+  stallId: number
+  addons: Addons
+  otherExtras: string
+  change: boolean
+}
+
+export const reserveStall = createServerFn({ method: 'POST' })
+  .validator((input: ReserveInput) => {
+    if (!isPlan(input.plan)) throw new Error('Choose a plan.')
+    if (!isMarketDate(input.first)) throw new Error('Choose your first Saturday.')
+    if (!isStallId(Number(input.stallId))) throw new Error('Choose an open stall.')
+    return {
+      plan: input.plan,
+      first: input.first,
+      stallId: Number(input.stallId),
+      addons: {
+        tent: !!input.addons?.tent,
+        electricity: !!input.addons?.electricity,
+        tables: Math.max(0, Math.min(50, Math.floor(Number(input.addons?.tables) || 0))),
+      },
+      otherExtras: typeof input.otherExtras === 'string' ? input.otherExtras.trim().slice(0, 500) : '',
+      change: !!input.change,
+    }
+  })
+  .handler(async ({ data }) => {
+    const database = getDatabase()
+    sweepDeadlines(database)
+    const vendor = requireVendor()
+    if (!upcomingSaturdays(5).includes(data.first)) throw new Error('Choose one of the upcoming Saturdays.')
+    database.transaction((tx) => {
+      assertCanReserve(tx, vendor)
+      const existing = currentReservation(tx, vendor.id)
+      if (existing) {
+        const rows = reservationRows(tx, existing.id)
+        const active = rows.some((r) => isActiveStatus(r.status))
+        if (data.change) {
+          if (!active || rows.some((r) => r.status === 'paid' || r.status === 'confirming')) throw new Error('This reservation can no longer change stalls.')
+        } else if (active) {
+          throw new Error('You already have a reserved stall. Use Change stall on your dashboard.')
+        }
+        // Swapping stalls before any payment is not a cancellation: the old Saturdays simply go away.
+        if (existing.addonsHeld) adjustStock(tx, { tables: existing.tables, electricity: existing.electricity ? 1 : 0 })
+        tx.delete(schema.marketBookings).where(eq(schema.marketBookings.reservationId, existing.id)).run()
+        tx.update(schema.marketReservations).set({ current: false, addonsHeld: false }).where(eq(schema.marketReservations.id, existing.id)).run()
+      }
+      const dates = selectionDates(data.plan, data.first)
+      const taken = unavailableKeys(tx, dates)
+      const blocked = dates.find((d) => isTaken(taken, d, data.stallId))
+      if (blocked) throw new Error(`Stall ${stallLabel(data.stallId)} isn't available on ${fmtDay(blocked)}. Choose another stall.`)
+      const { prices, stock } = readSettings(tx)
+      if (data.addons.electricity && stock.electricity < 1) throw new Error('Electricity has sold out. Remove it to continue.')
+      if (data.addons.tables > stock.tables) throw new Error(`Only ${stock.tables} tables are available.`)
+      adjustStock(tx, { tables: -data.addons.tables, electricity: data.addons.electricity ? -1 : 0 })
+      const q = quote(prices, data.plan, data.addons, data.otherExtras)
+      const reservationId = newId('reservation')
+      tx.insert(schema.marketReservations)
+        .values({
+          id: reservationId,
+          vendorId: vendor.id,
+          plan: data.plan,
+          stallId: data.stallId,
+          perSaturday: q.perSaturday,
+          ...data.addons,
+          otherExtras: data.otherExtras,
+          addonsHeld: true,
+          current: true,
+          createdAt: iso(),
+        })
+        .run()
+      for (const date of dates) {
+        tx.insert(schema.marketBookings)
+          .values({
+            id: newId('booking'),
+            marketDate: date,
+            stallId: data.stallId,
+            reservationId,
+            vendorId: vendor.id,
+            plan: data.plan,
+            amount: q.perSaturday,
+            ...data.addons,
+            status: 'due',
+            source: 'Online',
+            createdAt: iso(),
+            updatedAt: iso(),
+          })
+          .run()
+      }
+      setNotice(tx, vendor.id, '')
+      audit(tx, 'vendor', vendor.id, 'reservation.created', reservationId, `Reserved stall ${stallLabel(data.stallId)} on the ${PLANS[data.plan].name.toLowerCase()} from ${fmtDay(data.first)}.`)
+    })
+    return { ok: true }
+  })
+
+// Books one Saturday that was released or cancelled, or the Saturday after the last one, on any open stall.
+export const bookSaturday = createServerFn({ method: 'POST' })
+  .validator((input: { rebook?: string; append?: string; stallId: number }) => {
+    if (!isStallId(Number(input.stallId))) throw new Error('Choose an open stall.')
+    return {
+      rebook: typeof input.rebook === 'string' ? input.rebook.slice(0, 120) : undefined,
+      append: isMarketDate(input.append) ? input.append : undefined,
+      stallId: Number(input.stallId),
+    }
+  })
+  .handler(async ({ data }) => {
+    const database = getDatabase()
+    sweepDeadlines(database)
+    const vendor = requireVendor()
+    let outcome = { ok: true } as { ok: true } | { ok: false; message: string }
+    database.transaction((tx) => {
+      assertCanReserve(tx, vendor)
+      const reservation = currentReservation(tx, vendor.id)
+      if (!reservation) throw new Error('You have no reservation to add a Saturday to.')
+      const row = data.rebook
+        ? tx.select().from(schema.marketBookings).where(and(eq(schema.marketBookings.id, data.rebook), eq(schema.marketBookings.reservationId, reservation.id))).get()
+        : null
+      const date = row ? row.marketDate : data.append
+      if (!date || (row && isActiveStatus(row.status)) || now() >= saturdayOpensAt(date)) throw new Error('That Saturday can no longer be booked.')
+      if (!row && reservationRows(tx, reservation.id).some((r) => r.marketDate === date && isActiveStatus(r.status))) throw new Error('That Saturday is already booked.')
+      if (isTaken(unavailableKeys(tx, [date]), date, data.stallId)) throw new Error(`Stall ${stallLabel(data.stallId)} isn't available on ${fmtDay(date)}. Choose another stall.`)
+      if (!takeAddons(tx, reservation)) {
+        setNotice(tx, vendor.id, 'Your add-ons are no longer available for this booking. Please contact the market office.')
+        outcome = { ok: false, message: 'add-ons' }
+        return
+      }
+      if (row) {
+        tx.update(schema.marketBookings).set({ status: 'due', stallId: data.stallId, amount: reservation.perSaturday, updatedAt: iso() }).where(eq(schema.marketBookings.id, row.id)).run()
+      } else {
+        tx.insert(schema.marketBookings)
+          .values({
+            id: newId('booking'),
+            marketDate: date,
+            stallId: data.stallId,
+            reservationId: reservation.id,
+            vendorId: vendor.id,
+            plan: reservation.plan,
+            amount: reservation.perSaturday,
+            tent: reservation.tent,
+            tables: reservation.tables,
+            electricity: reservation.electricity,
+            status: 'due',
+            source: 'Online',
+            createdAt: iso(),
+            updatedAt: iso(),
+          })
+          .run()
+      }
+      setNotice(tx, vendor.id, `Stall ${stallLabel(data.stallId)} is reserved for ${fmtDay(date)}.`)
+    })
+    return outcome
+  })
+
+// Weekly plan: the Saturday after the last one, on the same stall.
+export const reserveNextSaturday = createServerFn({ method: 'POST' }).handler(async () => {
+  const database = getDatabase()
+  sweepDeadlines(database)
+  const vendor = requireVendor()
+  let result = { ok: true } as { ok: true } | { ok: false; date: string; message: string }
+  database.transaction((tx) => {
+    assertCanReserve(tx, vendor)
+    const reservation = currentReservation(tx, vendor.id)
+    if (!reservation || reservation.plan !== 'weekly') throw new Error('Only weekly reservations can add the next Saturday.')
+    const rows = reservationRows(tx, reservation.id)
+    const last = rows[rows.length - 1]
+    if (!last) throw new Error('You have no reservation to add a Saturday to.')
+    const date = addWeeks(last.marketDate, 1)
+    if (isTaken(unavailableKeys(tx, [date]), date, last.stallId)) {
+      result = { ok: false, date, message: `Stall ${stallLabel(last.stallId)} isn't available on ${fmtDay(date)}.` }
+      setNotice(tx, vendor.id, '')
+      return
+    }
+    if (!takeAddons(tx, reservation)) {
+      setNotice(tx, vendor.id, 'Your add-ons are no longer available for this booking. Please contact the market office.')
+      return
+    }
+    tx.insert(schema.marketBookings)
       .values({
-        id: `audit-${crypto.randomUUID()}`,
-        actorKind: 'local-vendor',
-        actorId: data.vendorId,
-        action: 'booking.cancelled',
-        entityType: 'booking',
-        entityId: data.bookingId,
-        summary: 'Cancelled a local reservation. No payment or refund was involved.',
-        createdAt: now,
+        id: newId('booking'),
+        marketDate: date,
+        stallId: last.stallId,
+        reservationId: reservation.id,
+        vendorId: vendor.id,
+        plan: reservation.plan,
+        amount: reservation.perSaturday,
+        tent: reservation.tent,
+        tables: reservation.tables,
+        electricity: reservation.electricity,
+        status: 'due',
+        source: 'Online',
+        createdAt: iso(),
+        updatedAt: iso(),
       })
       .run()
-
-    return { bookingId: data.bookingId }
+    setNotice(tx, vendor.id, '')
   })
+  return result
+})
+
+// ---------- Cancellations ----------
+
+export const cancelSaturdays = createServerFn({ method: 'POST' })
+  .validator((input: { bookingId?: string; all?: boolean }) => ({
+    bookingId: typeof input.bookingId === 'string' ? input.bookingId.slice(0, 120) : undefined,
+    all: !!input.all,
+  }))
+  .handler(async ({ data }) => {
+    const database = getDatabase()
+    sweepDeadlines(database)
+    const vendor = requireVendor()
+    database.transaction((tx) => {
+      const reservation = currentReservation(tx, vendor.id)
+      if (!reservation) throw new Error('You have no reservation to cancel.')
+      const rows = reservationRows(tx, reservation.id).filter((r) => isActiveStatus(r.status) && now() < saturdayOpensAt(r.marketDate))
+      const targets = data.all ? rows : rows.filter((r) => r.id === data.bookingId)
+      if (!targets.length) throw new Error('That Saturday can no longer be cancelled.')
+      const at = now()
+      for (const row of targets) {
+        tx.update(schema.marketBookings).set({ status: 'cancelled', updatedAt: iso() }).where(eq(schema.marketBookings.id, row.id)).run()
+        tx.insert(schema.marketCancellations).values({ id: newId('cancellation'), vendorId: vendor.id, cancelledAt: at, late: isLate(row.marketDate, at) }).run()
+      }
+      const first = targets[0]!
+      const late = isLate(first.marketDate, at)
+      settleReservation(tx, vendor.id, reservation.id, data.all ? 'Your reservation was cancelled.' : `${fmtDay(first.marketDate)} was cancelled${late ? ' with less than 72 hours’ notice' : ''}.`)
+      audit(tx, 'vendor', vendor.id, 'reservation.cancelled', reservation.id, `Cancelled ${targets.length} Saturday(s).`)
+    })
+    return { ok: true }
+  })
+
+// ---------- Payment ----------
+
+function dueRowsFor(vendorId: string, ids: Array<string>) {
+  const database = getDatabase()
+  const reservation = currentReservation(database, vendorId)
+  if (!reservation || !ids.length) return { reservation, rows: [] }
+  const rows = database
+    .select()
+    .from(schema.marketBookings)
+    .where(and(eq(schema.marketBookings.reservationId, reservation.id), eq(schema.marketBookings.status, 'due'), inArray(schema.marketBookings.id, ids)))
+    .all()
+    .sort((a, b) => a.marketDate.localeCompare(b.marketDate))
+  return { reservation, rows }
+}
+
+const idList = (input: { ids: Array<string> }) => ({
+  ids: Array.isArray(input.ids) ? input.ids.filter((id) => typeof id === 'string').slice(0, 30) : [],
+})
+
+export const getPaymentSummary = createServerFn({ method: 'GET' })
+  .validator(idList)
+  .handler(async ({ data }) => {
+    sweepDeadlines(getDatabase())
+    const vendor = requireVendor()
+    const { reservation, rows } = dueRowsFor(vendor.id, data.ids)
+    if (!reservation || !rows.length) return null
+    return { stallId: reservation.stallId, perSaturday: reservation.perSaturday, rows: rows.map((r) => ({ id: r.id, date: r.marketDate, amount: r.amount })) }
+  })
+
+// No payment provider is connected yet: the Saturdays wait as "Confirming" until the market team marks them paid.
+export const submitPayment = createServerFn({ method: 'POST' })
+  .validator(idList)
+  .handler(async ({ data }) => {
+    const database = getDatabase()
+    sweepDeadlines(database)
+    const vendor = requireVendor()
+    const { reservation, rows } = dueRowsFor(vendor.id, data.ids)
+    if (!reservation || !rows.length) throw new Error('These Saturdays are no longer due.')
+    database.transaction((tx) => {
+      tx.update(schema.marketBookings)
+        .set({ status: 'confirming', updatedAt: iso() })
+        .where(inArray(schema.marketBookings.id, rows.map((r) => r.id)))
+        .run()
+      setNotice(tx, vendor.id, '')
+      audit(tx, 'vendor', vendor.id, 'payment.submitted', reservation.id, `Submitted payment for ${rows.length} Saturday(s); awaiting confirmation.`)
+    })
+    return { ok: true }
+  })
+
+// ---------- Account ----------
+
+export const requestPasswordChange = createServerFn({ method: 'POST' }).handler(async () => {
+  const vendor = requireVendor()
+  const link = issueToken(vendor.id, 'reset_password')
+  sendMarketEmail({ to: vendor.email, subject: 'Change your Farmers Market password', link })
+  return { email: vendor.email }
+})
+
+export const requestPasswordReset = createServerFn({ method: 'POST' })
+  .validator((input: { email: string }) => ({ email: String(input.email ?? '').trim().toLowerCase().slice(0, 320) }))
+  .handler(async ({ data }) => {
+    const vendor = getDatabase().select().from(schema.marketVendors).where(eq(schema.marketVendors.email, data.email)).get()
+    if (vendor) sendMarketEmail({ to: vendor.email, subject: 'Change your Farmers Market password', link: issueToken(vendor.id, 'reset_password') })
+    return { ok: true }
+  })
+
+export const deleteVendorAccount = createServerFn({ method: 'POST' }).handler(async () => {
+  const database = getDatabase()
+  const vendor = requireVendor()
+  database.transaction((tx) => {
+    const reservation = currentReservation(tx, vendor.id)
+    if (reservation?.addonsHeld) adjustStock(tx, { tables: reservation.tables, electricity: reservation.electricity ? 1 : 0 })
+    // Admin-entered bookings for this vendor are removed with the account; their add-ons go back to stock.
+    const adminRows = tx
+      .select()
+      .from(schema.marketBookings)
+      .where(and(eq(schema.marketBookings.vendorId, vendor.id), isNull(schema.marketBookings.reservationId), inArray(schema.marketBookings.status, ACTIVE_STATUSES)))
+      .all()
+    for (const row of adminRows) adjustStock(tx, { tables: row.tables, electricity: row.electricity ? 1 : 0 })
+    tx.delete(schema.marketVendors).where(eq(schema.marketVendors.id, vendor.id)).run()
+    audit(tx, 'vendor', null, 'vendor.deleted', vendor.id, `${vendor.business} deleted their account.`)
+  })
+  await rm(resolve(getDataDirectory(), 'market-documents', vendor.id), { recursive: true, force: true })
+  endAllSessions('vendor', vendor.id)
+  endSession('vendor')
+  return { ok: true }
+})
+

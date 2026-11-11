@@ -1,4 +1,4 @@
-# Claude Instructions — Key Biscayne Community Church
+# Claude Instructions — Key Biscayne Farmers Market
 
 These instructions are mandatory for every Claude session in this repository.
 
@@ -7,23 +7,20 @@ These instructions are mandatory for every Claude session in this repository.
 Before proposing or changing code, read:
 
 1. `AGENTS.md`
-2. `docs/static-site-implementation.md`
-3. `docs/entire-website-analysis.md`
-4. The existing route/component/style files affected by the request
+2. `docs/farmers-market.md`
+3. The existing route/component/style files affected by the request
 
 Do not guess how this project works from a filename or a screenshot. Understand the existing implementation and reuse its patterns.
 
 ## Current product state
 
-The five static public routes are implemented and locally working:
+This repository is the Key Biscayne Farmers Market site. The earlier church website was removed; the Farmers Market design (Claude Design artifact `FarmersMarket.dc.html`) is the source of truth.
 
-- `/`
-- `/about`
-- `/community-school`
-- `/mission`
-- `/farmers-market`
+- `/` — public market page and vendor sign-up
+- `/vendor/*` — vendor login, dashboard, application, plaza map, review, payment, account
+- `/admin/*` — market admin sign-in and dashboard (vendors, stall bookings, pricing)
 
-The current phase is intentionally static. Forms show local preview success states and do not send or store data. The Farmers Market account/admin product is analyzed but not implemented.
+Accounts, applications, documents, reservations and pricing are stored in local SQLite under `.data/`. Email delivery and payment processing are not connected.
 
 Run locally with:
 
@@ -41,10 +38,10 @@ Open [http://localhost:3000](http://localhost:3000).
 - Never introduce Next.js.
 - Never introduce Vercel-specific code or configuration.
 - Preserve one application. No microservices or second frontend.
-- Use the existing plain CSS design system in `src/styles.css`.
+- Use the existing plain CSS in `src/styles.css` (market `fm-`, `mk-`, `ad-`, `mp-` classes).
 - Do not add Tailwind, shadcn, Material UI, Chakra, Bootstrap, or a generic UI kit.
 - Do not add a CMS, GraphQL, tRPC, Redux, Redis, Prisma, or a separate API without explicit owner approval.
-- Do not add Better Auth, Stripe, Resend, a database, storage, or deployment infrastructure until the owner starts that phase.
+- Do not add Better Auth, Stripe, Resend, external storage, or deployment infrastructure until the owner starts that phase. The local SQLite database and session login already exist.
 - Do not add tests or test scaffolding unless explicitly requested.
 - Do not hand-edit `src/routeTree.gen.ts`.
 
@@ -61,15 +58,12 @@ Do not use `npm`, `pnpm`, `yarn`, `npx`, or Node-specific substitutes when Bun p
 
 ## Visual constraints
 
-The implementation is derived from the supplied Figma, not a generic church template. Preserve:
+The implementation follows the Farmers Market design, not a generic template. Preserve:
 
 - Cormorant Garamond, Manrope, and Barlow Semi Condensed typography
-- Navy, blue, gold, cream, sand, and Farmers Market green palette
-- Full-viewport section rhythm
-- Mandatory vertical scroll snapping
-- Fixed shared navigation
-- Responsive mobile navigation
-- Figma-derived photography and crops
+- The market's deep green ink, green, gold, mint and cream palette
+- The fixed market header (translucent green on `/`, light bar elsewhere)
+- The plaza map geometry in `src/market/plaza.ts` and its three layouts (mouse, tablet/touch, phone)
 - Generous editorial spacing and restrained interactions
 
 Do not replace the design with cards everywhere, gradients everywhere, huge rounded containers everywhere, stock photos, generated illustrations, random icons, or generic SaaS styling.
@@ -84,19 +78,20 @@ Do not replace the design with cards everywhere, gradients everywhere, huge roun
 - No unnecessary abstractions
 - No parallel component/design system beside the existing one
 - No rewriting working sections because another pattern is more familiar
-- No “modernization” that erases the Figma art direction
+- No “modernization” that erases the Farmers Market design
 
-If a requested change is ambiguous, inspect Figma, the documentation, and existing code first. Ask only when those sources cannot resolve a product decision.
+If a requested change is ambiguous, inspect the design, the documentation, and existing code first. Ask only when those sources cannot resolve a product decision.
 
 ## Responsible editing rules
 
 - Make the smallest coherent change that solves the request.
-- Reuse `src/site-data.ts` for shared navigation, schedule, events, and vendor content.
-- Reuse components under `src/components/` before creating another abstraction.
+- Reuse `src/market/rules.ts` for plans, prices, categories, agreements and dates, and `src/market/plaza.ts` for stalls.
+- Reuse components under `src/components/market/` before creating another abstraction.
 - Preserve semantic HTML, labels, keyboard behavior, focus states, reduced motion, and alt text.
-- Preserve `.snap-page`, `.page-section`, section IDs, and `HashScrollManager` unless the owner explicitly changes navigation behavior.
-- Keep sections content-driven on mobile; do not force desktop Figma heights onto narrow screens.
-- Do not invent phone numbers, email addresses, donation links, enrollment promises, event dates, or market rules.
+- Preserve the public page section IDs (`market-story`, `market-find`, `market-vendors`, `market-booking`, `market-visit`, `market-apply`) used by the header.
+- Booking rules live on the server; never trust prices or availability sent from the browser.
+- Keep sections content-driven on mobile; do not force desktop heights onto narrow screens.
+- Do not invent phone numbers, email addresses, prices, market rules, or vendor data.
 - Treat unexpected existing changes as the owner’s work. Never discard or overwrite them casually.
 - Never commit or push unless the owner explicitly asks.
 
@@ -132,4 +127,4 @@ When the person requesting a change does not write code:
 
 A good request format is:
 
-> Change [specific section] on [specific route]. Keep the current Figma-derived style, reuse existing tokens/components, preserve scroll snap and mobile behavior, and show me the browser result before changing other sections.
+> Change [specific section] on [specific route]. Keep the current Farmers Market design, reuse existing tokens/components, preserve mobile and tablet behavior, and show me the browser result before changing other sections.

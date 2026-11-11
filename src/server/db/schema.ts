@@ -1,147 +1,199 @@
 import { sql } from 'drizzle-orm'
-import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 const timestamp = (name: string) => text(name).notNull()
 
-export const formSubmissions = sqliteTable(
-  'form_submission',
-  {
-    id: text('id').primaryKey(),
-    type: text('type', { enum: ['contact', 'volunteer', 'school'] }).notNull(),
-    submitterName: text('submitter_name').notNull(),
-    email: text('email').notNull(),
-    phone: text('phone'),
-    topic: text('topic'),
-    subject: text('subject'),
-    message: text('message'),
-    detailsJson: text('details_json').notNull().default('{}'),
-    status: text('status', { enum: ['new', 'archived'] }).notNull().default('new'),
-    createdAt: timestamp('created_at'),
-  },
-  (table) => [index('form_submission_type_created_idx').on(table.type, table.createdAt)],
-)
+const flag = (name: string) => integer(name, { mode: 'boolean' }).notNull().default(false)
 
-export const vendors = sqliteTable(
-  'vendor',
+// One row per vendor account. The account, its application and its market standing live together
+// because the design treats them as one record: sign-up details, application progress, approval.
+export const marketVendors = sqliteTable(
+  'market_vendor',
   {
     id: text('id').primaryKey(),
     email: text('email').notNull(),
-    contactName: text('contact_name').notNull(),
+    passwordHash: text('password_hash'),
+    firstName: text('first_name').notNull(),
+    lastName: text('last_name').notNull(),
+    business: text('business').notNull(),
+    phone: text('phone').notNull(),
+    category: text('category').notNull(),
+    notes: text('notes').notNull().default(''),
+    status: text('status', { enum: ['in_progress', 'pending', 'approved', 'rejected'] })
+      .notNull()
+      .default('in_progress'),
+    detailsDone: flag('details_done'),
+    documentsDone: flag('documents_done'),
+    address: text('address').notNull().default(''),
+    website: text('website').notNull().default(''),
+    products: text('products').notNull().default(''),
+    priceRange: text('price_range').notNull().default(''),
+    targetMarket: text('target_market').notNull().default(''),
+    insuranceProvider: text('insurance_provider').notNull().default(''),
+    policyNumber: text('policy_number').notNull().default(''),
+    acksJson: text('acks_json').notNull().default('[]'),
+    approvedUntil: integer('approved_until'),
+    expiryReason: text('expiry_reason').notNull().default(''),
+    spaceLost: flag('space_lost'),
+    notice: text('notice').notNull().default(''),
+    submittedAt: text('submitted_at'),
     createdAt: timestamp('created_at'),
     updatedAt: timestamp('updated_at'),
   },
-  (table) => [uniqueIndex('vendor_email_unique').on(table.email)],
+  (table) => [uniqueIndex('market_vendor_email_unique').on(table.email)],
 )
 
-export const vendorApplications = sqliteTable(
-  'vendor_application',
+export const marketDocuments = sqliteTable(
+  'market_document',
   {
     id: text('id').primaryKey(),
     vendorId: text('vendor_id')
       .notNull()
-      .references(() => vendors.id, { onDelete: 'cascade' }),
-    revision: integer('revision').notNull(),
-    status: text('status', { enum: ['pending', 'approved', 'rejected'] })
-      .notNull()
-      .default('pending'),
-    businessName: text('business_name').notNull(),
-    productCategory: text('product_category').notNull(),
-    contactName: text('contact_name').notNull(),
-    email: text('email').notNull(),
-    phone: text('phone').notNull(),
-    details: text('details').notNull(),
-    certificateFileName: text('certificate_file_name').notNull(),
-    certificateStoredName: text('certificate_stored_name').notNull(),
-    certificateMime: text('certificate_mime').notNull(),
-    certificateSize: integer('certificate_size').notNull(),
-    rejectionReason: text('rejection_reason'),
-    submittedAt: timestamp('submitted_at'),
-    reviewedAt: text('reviewed_at'),
+      .references(() => marketVendors.id, { onDelete: 'cascade' }),
+    kind: text('kind', { enum: ['photoId', 'insurance', 'photos', 'foodPermit', 'mobilePermit'] }).notNull(),
+    fileName: text('file_name').notNull(),
+    storedName: text('stored_name').notNull(),
+    mime: text('mime').notNull(),
+    size: integer('size').notNull(),
+    uploadedAt: timestamp('uploaded_at'),
   },
-  (table) => [
-    uniqueIndex('vendor_application_revision_unique').on(table.vendorId, table.revision),
-    index('vendor_application_status_idx').on(table.status, table.submittedAt),
-  ],
+  (table) => [uniqueIndex('market_document_kind_unique').on(table.vendorId, table.kind)],
 )
 
-export const marketEvents = sqliteTable(
-  'market_event',
+export const marketAdmins = sqliteTable(
+  'market_admin',
+  {
+    id: text('id').primaryKey(),
+    email: text('email').notNull(),
+    passwordHash: text('password_hash').notNull(),
+    createdAt: timestamp('created_at'),
+  },
+  (table) => [uniqueIndex('market_admin_email_unique').on(table.email)],
+)
+
+export const marketSessions = sqliteTable(
+  'market_session',
+  {
+    tokenHash: text('token_hash').primaryKey(),
+    kind: text('kind', { enum: ['vendor', 'admin'] }).notNull(),
+    subjectId: text('subject_id').notNull(),
+    expiresAt: integer('expires_at').notNull(),
+    createdAt: timestamp('created_at'),
+  },
+  (table) => [index('market_session_subject_idx').on(table.kind, table.subjectId)],
+)
+
+// Single-use links that would be emailed: set a password after sign-up, or change it later.
+export const marketTokens = sqliteTable('market_token', {
+  tokenHash: text('token_hash').primaryKey(),
+  vendorId: text('vendor_id')
+    .notNull()
+    .references(() => marketVendors.id, { onDelete: 'cascade' }),
+  purpose: text('purpose', { enum: ['set_password', 'reset_password'] }).notNull(),
+  expiresAt: integer('expires_at').notNull(),
+  usedAt: integer('used_at'),
+  createdAt: timestamp('created_at'),
+})
+
+// A vendor's plan, price and add-ons. Each Saturday it covers is a market_booking row.
+export const marketReservations = sqliteTable(
+  'market_reservation',
+  {
+    id: text('id').primaryKey(),
+    vendorId: text('vendor_id')
+      .notNull()
+      .references(() => marketVendors.id, { onDelete: 'cascade' }),
+    plan: text('plan', { enum: ['weekly', 'seasonal'] }).notNull(),
+    stallId: integer('stall_id').notNull(),
+    perSaturday: integer('per_saturday').notNull(),
+    tent: flag('tent'),
+    tables: integer('tables').notNull().default(0),
+    electricity: flag('electricity'),
+    otherExtras: text('other_extras').notNull().default(''),
+    addonsHeld: flag('addons_held'),
+    current: flag('current'),
+    createdAt: timestamp('created_at'),
+  },
+  (table) => [index('market_reservation_vendor_idx').on(table.vendorId, table.current)],
+)
+
+// One stall on one Saturday. Online rows belong to a reservation; admin and manual rows do not.
+export const marketBookings = sqliteTable(
+  'market_booking',
   {
     id: text('id').primaryKey(),
     marketDate: text('market_date').notNull(),
-    label: text('label').notNull(),
-    startTime: text('start_time').notNull(),
-    endTime: text('end_time').notNull(),
-    status: text('status', { enum: ['open', 'closed'] }).notNull().default('open'),
+    stallId: integer('stall_id').notNull(),
+    reservationId: text('reservation_id').references(() => marketReservations.id, { onDelete: 'cascade' }),
+    vendorId: text('vendor_id').references(() => marketVendors.id, { onDelete: 'cascade' }),
+    walkIn: text('walk_in').notNull().default(''),
+    plan: text('plan', { enum: ['weekly', 'seasonal'] }).notNull(),
+    amount: integer('amount').notNull(),
+    tent: flag('tent'),
+    tables: integer('tables').notNull().default(0),
+    electricity: flag('electricity'),
+    status: text('status', { enum: ['due', 'confirming', 'paid', 'waived', 'cancelled', 'released'] })
+      .notNull()
+      .default('due'),
+    note: text('note').notNull().default(''),
+    source: text('source', { enum: ['Online', 'Admin', 'Manual'] }).notNull(),
     createdAt: timestamp('created_at'),
-  },
-  (table) => [uniqueIndex('market_event_date_unique').on(table.marketDate)],
-)
-
-export const stalls = sqliteTable(
-  'stall',
-  {
-    id: text('id').primaryKey(),
-    code: text('code').notNull(),
-    description: text('description').notNull(),
-    active: integer('active', { mode: 'boolean' }).notNull().default(true),
-  },
-  (table) => [uniqueIndex('stall_code_unique').on(table.code)],
-)
-
-export const eventStalls = sqliteTable(
-  'event_stall',
-  {
-    id: text('id').primaryKey(),
-    eventId: text('event_id')
-      .notNull()
-      .references(() => marketEvents.id, { onDelete: 'cascade' }),
-    stallId: text('stall_id')
-      .notNull()
-      .references(() => stalls.id, { onDelete: 'cascade' }),
-    tier: text('tier', { enum: ['standard', 'corner', 'premium'] })
-      .notNull()
-      .default('standard'),
-    priceCents: integer('price_cents').notNull(),
-    active: integer('active', { mode: 'boolean' }).notNull().default(true),
-  },
-  (table) => [
-    uniqueIndex('event_stall_unique').on(table.eventId, table.stallId),
-    index('event_stall_event_idx').on(table.eventId),
-  ],
-)
-
-export const bookings = sqliteTable(
-  'booking',
-  {
-    id: text('id').primaryKey(),
-    vendorId: text('vendor_id')
-      .notNull()
-      .references(() => vendors.id, { onDelete: 'cascade' }),
-    eventStallId: text('event_stall_id')
-      .notNull()
-      .references(() => eventStalls.id, { onDelete: 'restrict' }),
-    status: text('status', { enum: ['reserved', 'cancelled'] }).notNull().default('reserved'),
-    paymentStatus: text('payment_status', { enum: ['pending', 'complete'] })
-      .notNull()
-      .default('pending'),
-    priceCents: integer('price_cents').notNull(),
-    reservedAt: timestamp('reserved_at'),
     updatedAt: timestamp('updated_at'),
   },
   (table) => [
-    uniqueIndex('booking_active_stall_unique')
-      .on(table.eventStallId)
-      .where(sql`${table.status} = 'reserved'`),
-    index('booking_vendor_idx').on(table.vendorId, table.status),
+    uniqueIndex('market_booking_active_unique')
+      .on(table.marketDate, table.stallId)
+      .where(sql`${table.status} in ('due', 'confirming', 'paid', 'waived')`),
+    index('market_booking_vendor_idx').on(table.vendorId, table.marketDate),
+    index('market_booking_reservation_idx').on(table.reservationId),
   ],
 )
+
+export const marketCancellations = sqliteTable('market_cancellation', {
+  id: text('id').primaryKey(),
+  vendorId: text('vendor_id')
+    .notNull()
+    .references(() => marketVendors.id, { onDelete: 'cascade' }),
+  cancelledAt: integer('cancelled_at').notNull(),
+  late: flag('late'),
+})
+
+export const marketHolds = sqliteTable('market_hold', {
+  id: text('id').primaryKey(),
+  vendorId: text('vendor_id')
+    .notNull()
+    .references(() => marketVendors.id, { onDelete: 'cascade' }),
+  reason: text('reason').notNull(),
+  placedAt: integer('placed_at').notNull(),
+})
+
+export const marketClosures = sqliteTable(
+  'market_closure',
+  {
+    marketDate: text('market_date').notNull(),
+    stallId: integer('stall_id').notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.marketDate, table.stallId] })],
+)
+
+// Prices and limited add-on stock. One row, id 'market'.
+export const marketSettings = sqliteTable('market_settings', {
+  id: text('id').primaryKey(),
+  weekly: text('weekly').notNull(),
+  seasonal: text('seasonal').notNull(),
+  tent: text('tent').notNull(),
+  tableEach: text('table_each').notNull(),
+  electricity: text('electricity').notNull(),
+  stockTables: integer('stock_tables').notNull(),
+  stockElectricity: integer('stock_electricity').notNull(),
+})
+
 
 export const auditLogs = sqliteTable(
   'audit_log',
   {
     id: text('id').primaryKey(),
-    actorKind: text('actor_kind', { enum: ['local-vendor', 'local-admin', 'system'] }).notNull(),
+    actorKind: text('actor_kind', { enum: ['vendor', 'admin', 'system'] }).notNull(),
     actorId: text('actor_id'),
     action: text('action').notNull(),
     entityType: text('entity_type').notNull(),
@@ -152,11 +204,9 @@ export const auditLogs = sqliteTable(
   (table) => [index('audit_log_created_idx').on(table.createdAt)],
 )
 
-export type FormSubmission = typeof formSubmissions.$inferSelect
-export type Vendor = typeof vendors.$inferSelect
-export type VendorApplication = typeof vendorApplications.$inferSelect
-export type MarketEvent = typeof marketEvents.$inferSelect
-export type Stall = typeof stalls.$inferSelect
-export type EventStall = typeof eventStalls.$inferSelect
-export type Booking = typeof bookings.$inferSelect
 export type AuditLog = typeof auditLogs.$inferSelect
+export type MarketVendor = typeof marketVendors.$inferSelect
+export type MarketDocument = typeof marketDocuments.$inferSelect
+export type MarketReservation = typeof marketReservations.$inferSelect
+export type MarketBooking = typeof marketBookings.$inferSelect
+export type MarketSettings = typeof marketSettings.$inferSelect

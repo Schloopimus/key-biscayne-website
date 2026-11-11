@@ -10,319 +10,218 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AboutRouteImport } from './routes/about'
-import { Route as CommunitySchoolRouteImport } from './routes/community-school'
-import { Route as FarmersMarketRouteImport } from './routes/farmers-market'
-import { Route as MissionRouteImport } from './routes/mission'
-import { Route as FarmersMarketAdminRouteImport } from './routes/farmers-market_.admin'
-import { Route as FarmersMarketVendorRouteImport } from './routes/farmers-market_.vendor'
-import { Route as FarmersMarketAdminIndexRouteImport } from './routes/farmers-market_.admin.index'
-import { Route as FarmersMarketAdminApplicationsRouteImport } from './routes/farmers-market_.admin.applications'
-import { Route as FarmersMarketAdminBookingsRouteImport } from './routes/farmers-market_.admin.bookings'
-import { Route as FarmersMarketAdminMarketDatesRouteImport } from './routes/farmers-market_.admin.market-dates'
-import { Route as FarmersMarketAdminSubmissionsRouteImport } from './routes/farmers-market_.admin.submissions'
-import { Route as FarmersMarketAdminVendorsRouteImport } from './routes/farmers-market_.admin.vendors'
-import { Route as FarmersMarketVendorIndexRouteImport } from './routes/farmers-market_.vendor.index'
-import { Route as FarmersMarketVendorApplicationRouteImport } from './routes/farmers-market_.vendor.application'
-import { Route as FarmersMarketVendorBookingsRouteImport } from './routes/farmers-market_.vendor.bookings'
-import { Route as FarmersMarketVendorCheckoutRouteImport } from './routes/farmers-market_.vendor.checkout'
-import { Route as FarmersMarketVendorLoginRouteImport } from './routes/farmers-market_.vendor.login'
-import { Route as FarmersMarketVendorSignUpRouteImport } from './routes/farmers-market_.vendor.sign-up'
-import { Route as FarmersMarketVendorStallsRouteImport } from './routes/farmers-market_.vendor.stalls'
-import { Route as ApiLocalDemoCertificatesApplicationIdRouteImport } from './routes/api.local-demo.certificates.$applicationId'
-import { Route as FarmersMarketAdminApplicationsApplicationIdRouteImport } from './routes/farmers-market_.admin.applications_.$applicationId'
-import { Route as FarmersMarketAdminMarketDatesNewRouteImport } from './routes/farmers-market_.admin.market-dates_.new'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as CheckEmailRouteImport } from './routes/check-email'
+import { Route as SetPasswordRouteImport } from './routes/set-password'
+import { Route as VendorRouteImport } from './routes/vendor'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as VendorIndexRouteImport } from './routes/vendor.index'
+import { Route as VendorAccountRouteImport } from './routes/vendor.account'
+import { Route as VendorApplicationRouteImport } from './routes/vendor.application'
+import { Route as VendorDetailsRouteImport } from './routes/vendor.details'
+import { Route as VendorLoginRouteImport } from './routes/vendor.login'
+import { Route as VendorMapRouteImport } from './routes/vendor.map'
+import { Route as VendorPaymentRouteImport } from './routes/vendor.payment'
+import { Route as VendorReviewRouteImport } from './routes/vendor.review'
+import { Route as ApiDocumentsDocumentIdRouteImport } from './routes/api.documents.$documentId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CommunitySchoolRoute = CommunitySchoolRouteImport.update({
-  id: '/community-school',
-  path: '/community-school',
+const CheckEmailRoute = CheckEmailRouteImport.update({
+  id: '/check-email',
+  path: '/check-email',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FarmersMarketRoute = FarmersMarketRouteImport.update({
-  id: '/farmers-market',
-  path: '/farmers-market',
+const SetPasswordRoute = SetPasswordRouteImport.update({
+  id: '/set-password',
+  path: '/set-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MissionRoute = MissionRouteImport.update({
-  id: '/mission',
-  path: '/mission',
+const VendorRoute = VendorRouteImport.update({
+  id: '/vendor',
+  path: '/vendor',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FarmersMarketAdminRoute = FarmersMarketAdminRouteImport.update({
-  id: '/farmers-market_/admin',
-  path: '/farmers-market/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FarmersMarketVendorRoute = FarmersMarketVendorRouteImport.update({
-  id: '/farmers-market_/vendor',
-  path: '/farmers-market/vendor',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FarmersMarketAdminIndexRoute = FarmersMarketAdminIndexRouteImport.update({
+const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => FarmersMarketAdminRoute,
+  getParentRoute: () => AdminRoute,
 } as any)
-const FarmersMarketAdminApplicationsRoute =
-  FarmersMarketAdminApplicationsRouteImport.update({
-    id: '/applications',
-    path: '/applications',
-    getParentRoute: () => FarmersMarketAdminRoute,
-  } as any)
-const FarmersMarketAdminBookingsRoute =
-  FarmersMarketAdminBookingsRouteImport.update({
-    id: '/bookings',
-    path: '/bookings',
-    getParentRoute: () => FarmersMarketAdminRoute,
-  } as any)
-const FarmersMarketAdminMarketDatesRoute =
-  FarmersMarketAdminMarketDatesRouteImport.update({
-    id: '/market-dates',
-    path: '/market-dates',
-    getParentRoute: () => FarmersMarketAdminRoute,
-  } as any)
-const FarmersMarketAdminSubmissionsRoute =
-  FarmersMarketAdminSubmissionsRouteImport.update({
-    id: '/submissions',
-    path: '/submissions',
-    getParentRoute: () => FarmersMarketAdminRoute,
-  } as any)
-const FarmersMarketAdminVendorsRoute =
-  FarmersMarketAdminVendorsRouteImport.update({
-    id: '/vendors',
-    path: '/vendors',
-    getParentRoute: () => FarmersMarketAdminRoute,
-  } as any)
-const FarmersMarketVendorIndexRoute =
-  FarmersMarketVendorIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => FarmersMarketVendorRoute,
-  } as any)
-const FarmersMarketVendorApplicationRoute =
-  FarmersMarketVendorApplicationRouteImport.update({
-    id: '/application',
-    path: '/application',
-    getParentRoute: () => FarmersMarketVendorRoute,
-  } as any)
-const FarmersMarketVendorBookingsRoute =
-  FarmersMarketVendorBookingsRouteImport.update({
-    id: '/bookings',
-    path: '/bookings',
-    getParentRoute: () => FarmersMarketVendorRoute,
-  } as any)
-const FarmersMarketVendorCheckoutRoute =
-  FarmersMarketVendorCheckoutRouteImport.update({
-    id: '/checkout',
-    path: '/checkout',
-    getParentRoute: () => FarmersMarketVendorRoute,
-  } as any)
-const FarmersMarketVendorLoginRoute =
-  FarmersMarketVendorLoginRouteImport.update({
-    id: '/login',
-    path: '/login',
-    getParentRoute: () => FarmersMarketVendorRoute,
-  } as any)
-const FarmersMarketVendorSignUpRoute =
-  FarmersMarketVendorSignUpRouteImport.update({
-    id: '/sign-up',
-    path: '/sign-up',
-    getParentRoute: () => FarmersMarketVendorRoute,
-  } as any)
-const FarmersMarketVendorStallsRoute =
-  FarmersMarketVendorStallsRouteImport.update({
-    id: '/stalls',
-    path: '/stalls',
-    getParentRoute: () => FarmersMarketVendorRoute,
-  } as any)
-const ApiLocalDemoCertificatesApplicationIdRoute =
-  ApiLocalDemoCertificatesApplicationIdRouteImport.update({
-    id: '/api/local-demo/certificates/$applicationId',
-    path: '/api/local-demo/certificates/$applicationId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const FarmersMarketAdminApplicationsApplicationIdRoute =
-  FarmersMarketAdminApplicationsApplicationIdRouteImport.update({
-    id: '/applications_/$applicationId',
-    path: '/applications/$applicationId',
-    getParentRoute: () => FarmersMarketAdminRoute,
-  } as any)
-const FarmersMarketAdminMarketDatesNewRoute =
-  FarmersMarketAdminMarketDatesNewRouteImport.update({
-    id: '/market-dates_/new',
-    path: '/market-dates/new',
-    getParentRoute: () => FarmersMarketAdminRoute,
-  } as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRoute,
+} as any)
+const VendorIndexRoute = VendorIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => VendorRoute,
+} as any)
+const VendorAccountRoute = VendorAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => VendorRoute,
+} as any)
+const VendorApplicationRoute = VendorApplicationRouteImport.update({
+  id: '/application',
+  path: '/application',
+  getParentRoute: () => VendorRoute,
+} as any)
+const VendorDetailsRoute = VendorDetailsRouteImport.update({
+  id: '/details',
+  path: '/details',
+  getParentRoute: () => VendorRoute,
+} as any)
+const VendorLoginRoute = VendorLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => VendorRoute,
+} as any)
+const VendorMapRoute = VendorMapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => VendorRoute,
+} as any)
+const VendorPaymentRoute = VendorPaymentRouteImport.update({
+  id: '/payment',
+  path: '/payment',
+  getParentRoute: () => VendorRoute,
+} as any)
+const VendorReviewRoute = VendorReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => VendorRoute,
+} as any)
+const ApiDocumentsDocumentIdRoute = ApiDocumentsDocumentIdRouteImport.update({
+  id: '/api/documents/$documentId',
+  path: '/api/documents/$documentId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/community-school': typeof CommunitySchoolRoute
-  '/farmers-market': typeof FarmersMarketRoute
-  '/mission': typeof MissionRoute
-  '/farmers-market/admin': typeof FarmersMarketAdminRouteWithChildren
-  '/farmers-market/vendor': typeof FarmersMarketVendorRouteWithChildren
-  '/farmers-market/admin/applications': typeof FarmersMarketAdminApplicationsRoute
-  '/farmers-market/admin/bookings': typeof FarmersMarketAdminBookingsRoute
-  '/farmers-market/admin/market-dates': typeof FarmersMarketAdminMarketDatesRoute
-  '/farmers-market/admin/submissions': typeof FarmersMarketAdminSubmissionsRoute
-  '/farmers-market/admin/vendors': typeof FarmersMarketAdminVendorsRoute
-  '/farmers-market/vendor/application': typeof FarmersMarketVendorApplicationRoute
-  '/farmers-market/vendor/bookings': typeof FarmersMarketVendorBookingsRoute
-  '/farmers-market/vendor/checkout': typeof FarmersMarketVendorCheckoutRoute
-  '/farmers-market/vendor/login': typeof FarmersMarketVendorLoginRoute
-  '/farmers-market/vendor/sign-up': typeof FarmersMarketVendorSignUpRoute
-  '/farmers-market/vendor/stalls': typeof FarmersMarketVendorStallsRoute
-  '/farmers-market/admin/': typeof FarmersMarketAdminIndexRoute
-  '/farmers-market/vendor/': typeof FarmersMarketVendorIndexRoute
-  '/api/local-demo/certificates/$applicationId': typeof ApiLocalDemoCertificatesApplicationIdRoute
-  '/farmers-market/admin/applications/$applicationId': typeof FarmersMarketAdminApplicationsApplicationIdRoute
-  '/farmers-market/admin/market-dates/new': typeof FarmersMarketAdminMarketDatesNewRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/check-email': typeof CheckEmailRoute
+  '/set-password': typeof SetPasswordRoute
+  '/vendor': typeof VendorRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
+  '/vendor/account': typeof VendorAccountRoute
+  '/vendor/application': typeof VendorApplicationRoute
+  '/vendor/details': typeof VendorDetailsRoute
+  '/vendor/login': typeof VendorLoginRoute
+  '/vendor/map': typeof VendorMapRoute
+  '/vendor/payment': typeof VendorPaymentRoute
+  '/vendor/review': typeof VendorReviewRoute
+  '/admin/': typeof AdminIndexRoute
+  '/vendor/': typeof VendorIndexRoute
+  '/api/documents/$documentId': typeof ApiDocumentsDocumentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/community-school': typeof CommunitySchoolRoute
-  '/farmers-market': typeof FarmersMarketRoute
-  '/mission': typeof MissionRoute
-  '/farmers-market/admin/applications': typeof FarmersMarketAdminApplicationsRoute
-  '/farmers-market/admin/bookings': typeof FarmersMarketAdminBookingsRoute
-  '/farmers-market/admin/market-dates': typeof FarmersMarketAdminMarketDatesRoute
-  '/farmers-market/admin/submissions': typeof FarmersMarketAdminSubmissionsRoute
-  '/farmers-market/admin/vendors': typeof FarmersMarketAdminVendorsRoute
-  '/farmers-market/vendor/application': typeof FarmersMarketVendorApplicationRoute
-  '/farmers-market/vendor/bookings': typeof FarmersMarketVendorBookingsRoute
-  '/farmers-market/vendor/checkout': typeof FarmersMarketVendorCheckoutRoute
-  '/farmers-market/vendor/login': typeof FarmersMarketVendorLoginRoute
-  '/farmers-market/vendor/sign-up': typeof FarmersMarketVendorSignUpRoute
-  '/farmers-market/vendor/stalls': typeof FarmersMarketVendorStallsRoute
-  '/farmers-market/admin': typeof FarmersMarketAdminIndexRoute
-  '/farmers-market/vendor': typeof FarmersMarketVendorIndexRoute
-  '/api/local-demo/certificates/$applicationId': typeof ApiLocalDemoCertificatesApplicationIdRoute
-  '/farmers-market/admin/applications/$applicationId': typeof FarmersMarketAdminApplicationsApplicationIdRoute
-  '/farmers-market/admin/market-dates/new': typeof FarmersMarketAdminMarketDatesNewRoute
+  '/check-email': typeof CheckEmailRoute
+  '/set-password': typeof SetPasswordRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/vendor/account': typeof VendorAccountRoute
+  '/vendor/application': typeof VendorApplicationRoute
+  '/vendor/details': typeof VendorDetailsRoute
+  '/vendor/login': typeof VendorLoginRoute
+  '/vendor/map': typeof VendorMapRoute
+  '/vendor/payment': typeof VendorPaymentRoute
+  '/vendor/review': typeof VendorReviewRoute
+  '/admin': typeof AdminIndexRoute
+  '/vendor': typeof VendorIndexRoute
+  '/api/documents/$documentId': typeof ApiDocumentsDocumentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/community-school': typeof CommunitySchoolRoute
-  '/farmers-market': typeof FarmersMarketRoute
-  '/mission': typeof MissionRoute
-  '/farmers-market_/admin': typeof FarmersMarketAdminRouteWithChildren
-  '/farmers-market_/vendor': typeof FarmersMarketVendorRouteWithChildren
-  '/farmers-market_/admin/applications': typeof FarmersMarketAdminApplicationsRoute
-  '/farmers-market_/admin/bookings': typeof FarmersMarketAdminBookingsRoute
-  '/farmers-market_/admin/market-dates': typeof FarmersMarketAdminMarketDatesRoute
-  '/farmers-market_/admin/submissions': typeof FarmersMarketAdminSubmissionsRoute
-  '/farmers-market_/admin/vendors': typeof FarmersMarketAdminVendorsRoute
-  '/farmers-market_/vendor/application': typeof FarmersMarketVendorApplicationRoute
-  '/farmers-market_/vendor/bookings': typeof FarmersMarketVendorBookingsRoute
-  '/farmers-market_/vendor/checkout': typeof FarmersMarketVendorCheckoutRoute
-  '/farmers-market_/vendor/login': typeof FarmersMarketVendorLoginRoute
-  '/farmers-market_/vendor/sign-up': typeof FarmersMarketVendorSignUpRoute
-  '/farmers-market_/vendor/stalls': typeof FarmersMarketVendorStallsRoute
-  '/farmers-market_/admin/': typeof FarmersMarketAdminIndexRoute
-  '/farmers-market_/vendor/': typeof FarmersMarketVendorIndexRoute
-  '/api/local-demo/certificates/$applicationId': typeof ApiLocalDemoCertificatesApplicationIdRoute
-  '/farmers-market_/admin/applications_/$applicationId': typeof FarmersMarketAdminApplicationsApplicationIdRoute
-  '/farmers-market_/admin/market-dates_/new': typeof FarmersMarketAdminMarketDatesNewRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/check-email': typeof CheckEmailRoute
+  '/set-password': typeof SetPasswordRoute
+  '/vendor': typeof VendorRouteWithChildren
+  '/admin/login': typeof AdminLoginRoute
+  '/vendor/account': typeof VendorAccountRoute
+  '/vendor/application': typeof VendorApplicationRoute
+  '/vendor/details': typeof VendorDetailsRoute
+  '/vendor/login': typeof VendorLoginRoute
+  '/vendor/map': typeof VendorMapRoute
+  '/vendor/payment': typeof VendorPaymentRoute
+  '/vendor/review': typeof VendorReviewRoute
+  '/admin/': typeof AdminIndexRoute
+  '/vendor/': typeof VendorIndexRoute
+  '/api/documents/$documentId': typeof ApiDocumentsDocumentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/about'
-    | '/community-school'
-    | '/farmers-market'
-    | '/mission'
-    | '/farmers-market/admin'
-    | '/farmers-market/vendor'
-    | '/farmers-market/admin/applications'
-    | '/farmers-market/admin/bookings'
-    | '/farmers-market/admin/market-dates'
-    | '/farmers-market/admin/submissions'
-    | '/farmers-market/admin/vendors'
-    | '/farmers-market/vendor/application'
-    | '/farmers-market/vendor/bookings'
-    | '/farmers-market/vendor/checkout'
-    | '/farmers-market/vendor/login'
-    | '/farmers-market/vendor/sign-up'
-    | '/farmers-market/vendor/stalls'
-    | '/farmers-market/admin/'
-    | '/farmers-market/vendor/'
-    | '/api/local-demo/certificates/$applicationId'
-    | '/farmers-market/admin/applications/$applicationId'
-    | '/farmers-market/admin/market-dates/new'
+    | '/admin'
+    | '/check-email'
+    | '/set-password'
+    | '/vendor'
+    | '/admin/login'
+    | '/vendor/account'
+    | '/vendor/application'
+    | '/vendor/details'
+    | '/vendor/login'
+    | '/vendor/map'
+    | '/vendor/payment'
+    | '/vendor/review'
+    | '/admin/'
+    | '/vendor/'
+    | '/api/documents/$documentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/about'
-    | '/community-school'
-    | '/farmers-market'
-    | '/mission'
-    | '/farmers-market/admin/applications'
-    | '/farmers-market/admin/bookings'
-    | '/farmers-market/admin/market-dates'
-    | '/farmers-market/admin/submissions'
-    | '/farmers-market/admin/vendors'
-    | '/farmers-market/vendor/application'
-    | '/farmers-market/vendor/bookings'
-    | '/farmers-market/vendor/checkout'
-    | '/farmers-market/vendor/login'
-    | '/farmers-market/vendor/sign-up'
-    | '/farmers-market/vendor/stalls'
-    | '/farmers-market/admin'
-    | '/farmers-market/vendor'
-    | '/api/local-demo/certificates/$applicationId'
-    | '/farmers-market/admin/applications/$applicationId'
-    | '/farmers-market/admin/market-dates/new'
+    | '/check-email'
+    | '/set-password'
+    | '/admin/login'
+    | '/vendor/account'
+    | '/vendor/application'
+    | '/vendor/details'
+    | '/vendor/login'
+    | '/vendor/map'
+    | '/vendor/payment'
+    | '/vendor/review'
+    | '/admin'
+    | '/vendor'
+    | '/api/documents/$documentId'
   id:
     | '__root__'
     | '/'
-    | '/about'
-    | '/community-school'
-    | '/farmers-market'
-    | '/mission'
-    | '/farmers-market_/admin'
-    | '/farmers-market_/vendor'
-    | '/farmers-market_/admin/applications'
-    | '/farmers-market_/admin/bookings'
-    | '/farmers-market_/admin/market-dates'
-    | '/farmers-market_/admin/submissions'
-    | '/farmers-market_/admin/vendors'
-    | '/farmers-market_/vendor/application'
-    | '/farmers-market_/vendor/bookings'
-    | '/farmers-market_/vendor/checkout'
-    | '/farmers-market_/vendor/login'
-    | '/farmers-market_/vendor/sign-up'
-    | '/farmers-market_/vendor/stalls'
-    | '/farmers-market_/admin/'
-    | '/farmers-market_/vendor/'
-    | '/api/local-demo/certificates/$applicationId'
-    | '/farmers-market_/admin/applications_/$applicationId'
-    | '/farmers-market_/admin/market-dates_/new'
+    | '/admin'
+    | '/check-email'
+    | '/set-password'
+    | '/vendor'
+    | '/admin/login'
+    | '/vendor/account'
+    | '/vendor/application'
+    | '/vendor/details'
+    | '/vendor/login'
+    | '/vendor/map'
+    | '/vendor/payment'
+    | '/vendor/review'
+    | '/admin/'
+    | '/vendor/'
+    | '/api/documents/$documentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AboutRoute: typeof AboutRoute
-  CommunitySchoolRoute: typeof CommunitySchoolRoute
-  FarmersMarketRoute: typeof FarmersMarketRoute
-  MissionRoute: typeof MissionRoute
-  FarmersMarketAdminRoute: typeof FarmersMarketAdminRouteWithChildren
-  FarmersMarketVendorRoute: typeof FarmersMarketVendorRouteWithChildren
-  ApiLocalDemoCertificatesApplicationIdRoute: typeof ApiLocalDemoCertificatesApplicationIdRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  CheckEmailRoute: typeof CheckEmailRoute
+  SetPasswordRoute: typeof SetPasswordRoute
+  VendorRoute: typeof VendorRouteWithChildren
+  ApiDocumentsDocumentIdRoute: typeof ApiDocumentsDocumentIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -334,222 +233,158 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/community-school': {
-      id: '/community-school'
-      path: '/community-school'
-      fullPath: '/community-school'
-      preLoaderRoute: typeof CommunitySchoolRouteImport
+    '/check-email': {
+      id: '/check-email'
+      path: '/check-email'
+      fullPath: '/check-email'
+      preLoaderRoute: typeof CheckEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/farmers-market': {
-      id: '/farmers-market'
-      path: '/farmers-market'
-      fullPath: '/farmers-market'
-      preLoaderRoute: typeof FarmersMarketRouteImport
+    '/set-password': {
+      id: '/set-password'
+      path: '/set-password'
+      fullPath: '/set-password'
+      preLoaderRoute: typeof SetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/mission': {
-      id: '/mission'
-      path: '/mission'
-      fullPath: '/mission'
-      preLoaderRoute: typeof MissionRouteImport
+    '/vendor': {
+      id: '/vendor'
+      path: '/vendor'
+      fullPath: '/vendor'
+      preLoaderRoute: typeof VendorRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/farmers-market_/admin': {
-      id: '/farmers-market_/admin'
-      path: '/farmers-market/admin'
-      fullPath: '/farmers-market/admin'
-      preLoaderRoute: typeof FarmersMarketAdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/farmers-market_/vendor': {
-      id: '/farmers-market_/vendor'
-      path: '/farmers-market/vendor'
-      fullPath: '/farmers-market/vendor'
-      preLoaderRoute: typeof FarmersMarketVendorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/farmers-market_/admin/': {
-      id: '/farmers-market_/admin/'
+    '/admin/': {
+      id: '/admin/'
       path: '/'
-      fullPath: '/farmers-market/admin/'
-      preLoaderRoute: typeof FarmersMarketAdminIndexRouteImport
-      parentRoute: typeof FarmersMarketAdminRoute
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/farmers-market_/admin/applications': {
-      id: '/farmers-market_/admin/applications'
-      path: '/applications'
-      fullPath: '/farmers-market/admin/applications'
-      preLoaderRoute: typeof FarmersMarketAdminApplicationsRouteImport
-      parentRoute: typeof FarmersMarketAdminRoute
-    }
-    '/farmers-market_/admin/bookings': {
-      id: '/farmers-market_/admin/bookings'
-      path: '/bookings'
-      fullPath: '/farmers-market/admin/bookings'
-      preLoaderRoute: typeof FarmersMarketAdminBookingsRouteImport
-      parentRoute: typeof FarmersMarketAdminRoute
-    }
-    '/farmers-market_/admin/market-dates': {
-      id: '/farmers-market_/admin/market-dates'
-      path: '/market-dates'
-      fullPath: '/farmers-market/admin/market-dates'
-      preLoaderRoute: typeof FarmersMarketAdminMarketDatesRouteImport
-      parentRoute: typeof FarmersMarketAdminRoute
-    }
-    '/farmers-market_/admin/submissions': {
-      id: '/farmers-market_/admin/submissions'
-      path: '/submissions'
-      fullPath: '/farmers-market/admin/submissions'
-      preLoaderRoute: typeof FarmersMarketAdminSubmissionsRouteImport
-      parentRoute: typeof FarmersMarketAdminRoute
-    }
-    '/farmers-market_/admin/vendors': {
-      id: '/farmers-market_/admin/vendors'
-      path: '/vendors'
-      fullPath: '/farmers-market/admin/vendors'
-      preLoaderRoute: typeof FarmersMarketAdminVendorsRouteImport
-      parentRoute: typeof FarmersMarketAdminRoute
-    }
-    '/farmers-market_/vendor/': {
-      id: '/farmers-market_/vendor/'
-      path: '/'
-      fullPath: '/farmers-market/vendor/'
-      preLoaderRoute: typeof FarmersMarketVendorIndexRouteImport
-      parentRoute: typeof FarmersMarketVendorRoute
-    }
-    '/farmers-market_/vendor/application': {
-      id: '/farmers-market_/vendor/application'
-      path: '/application'
-      fullPath: '/farmers-market/vendor/application'
-      preLoaderRoute: typeof FarmersMarketVendorApplicationRouteImport
-      parentRoute: typeof FarmersMarketVendorRoute
-    }
-    '/farmers-market_/vendor/bookings': {
-      id: '/farmers-market_/vendor/bookings'
-      path: '/bookings'
-      fullPath: '/farmers-market/vendor/bookings'
-      preLoaderRoute: typeof FarmersMarketVendorBookingsRouteImport
-      parentRoute: typeof FarmersMarketVendorRoute
-    }
-    '/farmers-market_/vendor/checkout': {
-      id: '/farmers-market_/vendor/checkout'
-      path: '/checkout'
-      fullPath: '/farmers-market/vendor/checkout'
-      preLoaderRoute: typeof FarmersMarketVendorCheckoutRouteImport
-      parentRoute: typeof FarmersMarketVendorRoute
-    }
-    '/farmers-market_/vendor/login': {
-      id: '/farmers-market_/vendor/login'
+    '/admin/login': {
+      id: '/admin/login'
       path: '/login'
-      fullPath: '/farmers-market/vendor/login'
-      preLoaderRoute: typeof FarmersMarketVendorLoginRouteImport
-      parentRoute: typeof FarmersMarketVendorRoute
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/farmers-market_/vendor/sign-up': {
-      id: '/farmers-market_/vendor/sign-up'
-      path: '/sign-up'
-      fullPath: '/farmers-market/vendor/sign-up'
-      preLoaderRoute: typeof FarmersMarketVendorSignUpRouteImport
-      parentRoute: typeof FarmersMarketVendorRoute
+    '/vendor/': {
+      id: '/vendor/'
+      path: '/'
+      fullPath: '/vendor/'
+      preLoaderRoute: typeof VendorIndexRouteImport
+      parentRoute: typeof VendorRoute
     }
-    '/farmers-market_/vendor/stalls': {
-      id: '/farmers-market_/vendor/stalls'
-      path: '/stalls'
-      fullPath: '/farmers-market/vendor/stalls'
-      preLoaderRoute: typeof FarmersMarketVendorStallsRouteImport
-      parentRoute: typeof FarmersMarketVendorRoute
+    '/vendor/account': {
+      id: '/vendor/account'
+      path: '/account'
+      fullPath: '/vendor/account'
+      preLoaderRoute: typeof VendorAccountRouteImport
+      parentRoute: typeof VendorRoute
     }
-    '/api/local-demo/certificates/$applicationId': {
-      id: '/api/local-demo/certificates/$applicationId'
-      path: '/api/local-demo/certificates/$applicationId'
-      fullPath: '/api/local-demo/certificates/$applicationId'
-      preLoaderRoute: typeof ApiLocalDemoCertificatesApplicationIdRouteImport
+    '/vendor/application': {
+      id: '/vendor/application'
+      path: '/application'
+      fullPath: '/vendor/application'
+      preLoaderRoute: typeof VendorApplicationRouteImport
+      parentRoute: typeof VendorRoute
+    }
+    '/vendor/details': {
+      id: '/vendor/details'
+      path: '/details'
+      fullPath: '/vendor/details'
+      preLoaderRoute: typeof VendorDetailsRouteImport
+      parentRoute: typeof VendorRoute
+    }
+    '/vendor/login': {
+      id: '/vendor/login'
+      path: '/login'
+      fullPath: '/vendor/login'
+      preLoaderRoute: typeof VendorLoginRouteImport
+      parentRoute: typeof VendorRoute
+    }
+    '/vendor/map': {
+      id: '/vendor/map'
+      path: '/map'
+      fullPath: '/vendor/map'
+      preLoaderRoute: typeof VendorMapRouteImport
+      parentRoute: typeof VendorRoute
+    }
+    '/vendor/payment': {
+      id: '/vendor/payment'
+      path: '/payment'
+      fullPath: '/vendor/payment'
+      preLoaderRoute: typeof VendorPaymentRouteImport
+      parentRoute: typeof VendorRoute
+    }
+    '/vendor/review': {
+      id: '/vendor/review'
+      path: '/review'
+      fullPath: '/vendor/review'
+      preLoaderRoute: typeof VendorReviewRouteImport
+      parentRoute: typeof VendorRoute
+    }
+    '/api/documents/$documentId': {
+      id: '/api/documents/$documentId'
+      path: '/api/documents/$documentId'
+      fullPath: '/api/documents/$documentId'
+      preLoaderRoute: typeof ApiDocumentsDocumentIdRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/farmers-market_/admin/applications_/$applicationId': {
-      id: '/farmers-market_/admin/applications_/$applicationId'
-      path: '/applications/$applicationId'
-      fullPath: '/farmers-market/admin/applications/$applicationId'
-      preLoaderRoute: typeof FarmersMarketAdminApplicationsApplicationIdRouteImport
-      parentRoute: typeof FarmersMarketAdminRoute
-    }
-    '/farmers-market_/admin/market-dates_/new': {
-      id: '/farmers-market_/admin/market-dates_/new'
-      path: '/market-dates/new'
-      fullPath: '/farmers-market/admin/market-dates/new'
-      preLoaderRoute: typeof FarmersMarketAdminMarketDatesNewRouteImport
-      parentRoute: typeof FarmersMarketAdminRoute
     }
   }
 }
 
-interface FarmersMarketAdminRouteChildren {
-  FarmersMarketAdminApplicationsRoute: typeof FarmersMarketAdminApplicationsRoute
-  FarmersMarketAdminBookingsRoute: typeof FarmersMarketAdminBookingsRoute
-  FarmersMarketAdminMarketDatesRoute: typeof FarmersMarketAdminMarketDatesRoute
-  FarmersMarketAdminSubmissionsRoute: typeof FarmersMarketAdminSubmissionsRoute
-  FarmersMarketAdminVendorsRoute: typeof FarmersMarketAdminVendorsRoute
-  FarmersMarketAdminIndexRoute: typeof FarmersMarketAdminIndexRoute
-  FarmersMarketAdminApplicationsApplicationIdRoute: typeof FarmersMarketAdminApplicationsApplicationIdRoute
-  FarmersMarketAdminMarketDatesNewRoute: typeof FarmersMarketAdminMarketDatesNewRoute
+interface AdminRouteChildren {
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
-const FarmersMarketAdminRouteChildren: FarmersMarketAdminRouteChildren = {
-  FarmersMarketAdminApplicationsRoute: FarmersMarketAdminApplicationsRoute,
-  FarmersMarketAdminBookingsRoute: FarmersMarketAdminBookingsRoute,
-  FarmersMarketAdminMarketDatesRoute: FarmersMarketAdminMarketDatesRoute,
-  FarmersMarketAdminSubmissionsRoute: FarmersMarketAdminSubmissionsRoute,
-  FarmersMarketAdminVendorsRoute: FarmersMarketAdminVendorsRoute,
-  FarmersMarketAdminIndexRoute: FarmersMarketAdminIndexRoute,
-  FarmersMarketAdminApplicationsApplicationIdRoute:
-    FarmersMarketAdminApplicationsApplicationIdRoute,
-  FarmersMarketAdminMarketDatesNewRoute: FarmersMarketAdminMarketDatesNewRoute,
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminLoginRoute: AdminLoginRoute,
+  AdminIndexRoute: AdminIndexRoute,
 }
 
-const FarmersMarketAdminRouteWithChildren =
-  FarmersMarketAdminRoute._addFileChildren(FarmersMarketAdminRouteChildren)
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
-interface FarmersMarketVendorRouteChildren {
-  FarmersMarketVendorApplicationRoute: typeof FarmersMarketVendorApplicationRoute
-  FarmersMarketVendorBookingsRoute: typeof FarmersMarketVendorBookingsRoute
-  FarmersMarketVendorCheckoutRoute: typeof FarmersMarketVendorCheckoutRoute
-  FarmersMarketVendorLoginRoute: typeof FarmersMarketVendorLoginRoute
-  FarmersMarketVendorSignUpRoute: typeof FarmersMarketVendorSignUpRoute
-  FarmersMarketVendorStallsRoute: typeof FarmersMarketVendorStallsRoute
-  FarmersMarketVendorIndexRoute: typeof FarmersMarketVendorIndexRoute
+interface VendorRouteChildren {
+  VendorAccountRoute: typeof VendorAccountRoute
+  VendorApplicationRoute: typeof VendorApplicationRoute
+  VendorDetailsRoute: typeof VendorDetailsRoute
+  VendorLoginRoute: typeof VendorLoginRoute
+  VendorMapRoute: typeof VendorMapRoute
+  VendorPaymentRoute: typeof VendorPaymentRoute
+  VendorReviewRoute: typeof VendorReviewRoute
+  VendorIndexRoute: typeof VendorIndexRoute
 }
 
-const FarmersMarketVendorRouteChildren: FarmersMarketVendorRouteChildren = {
-  FarmersMarketVendorApplicationRoute: FarmersMarketVendorApplicationRoute,
-  FarmersMarketVendorBookingsRoute: FarmersMarketVendorBookingsRoute,
-  FarmersMarketVendorCheckoutRoute: FarmersMarketVendorCheckoutRoute,
-  FarmersMarketVendorLoginRoute: FarmersMarketVendorLoginRoute,
-  FarmersMarketVendorSignUpRoute: FarmersMarketVendorSignUpRoute,
-  FarmersMarketVendorStallsRoute: FarmersMarketVendorStallsRoute,
-  FarmersMarketVendorIndexRoute: FarmersMarketVendorIndexRoute,
+const VendorRouteChildren: VendorRouteChildren = {
+  VendorAccountRoute: VendorAccountRoute,
+  VendorApplicationRoute: VendorApplicationRoute,
+  VendorDetailsRoute: VendorDetailsRoute,
+  VendorLoginRoute: VendorLoginRoute,
+  VendorMapRoute: VendorMapRoute,
+  VendorPaymentRoute: VendorPaymentRoute,
+  VendorReviewRoute: VendorReviewRoute,
+  VendorIndexRoute: VendorIndexRoute,
 }
 
-const FarmersMarketVendorRouteWithChildren =
-  FarmersMarketVendorRoute._addFileChildren(FarmersMarketVendorRouteChildren)
+const VendorRouteWithChildren =
+  VendorRoute._addFileChildren(VendorRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
-  CommunitySchoolRoute: CommunitySchoolRoute,
-  FarmersMarketRoute: FarmersMarketRoute,
-  MissionRoute: MissionRoute,
-  FarmersMarketAdminRoute: FarmersMarketAdminRouteWithChildren,
-  FarmersMarketVendorRoute: FarmersMarketVendorRouteWithChildren,
-  ApiLocalDemoCertificatesApplicationIdRoute:
-    ApiLocalDemoCertificatesApplicationIdRoute,
+  AdminRoute: AdminRouteWithChildren,
+  CheckEmailRoute: CheckEmailRoute,
+  SetPasswordRoute: SetPasswordRoute,
+  VendorRoute: VendorRouteWithChildren,
+  ApiDocumentsDocumentIdRoute: ApiDocumentsDocumentIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
